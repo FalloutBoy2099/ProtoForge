@@ -50,7 +50,7 @@ namespace ProtoForge.Core.Formats.Msg
 				Entry = entry;
 			}
 
-			public String RawText { get; }
+			public String RawText { get; set; }
 
 			public MsgEntry? Entry { get; }
 		}
@@ -123,6 +123,7 @@ namespace ProtoForge.Core.Formats.Msg
 		public MsgEntry SetText(Int32 id, String text, String? audio = null)
 		{
 			text = Sanitize(text);
+			audio = audio is null ? null : Sanitize(audio);
 			Remember(id);
 			if (_byId.TryGetValue(id, out MsgEntry? existing))
 			{
@@ -159,6 +160,23 @@ namespace ProtoForge.Core.Formats.Msg
 				}
 			}
 
+			// A hand-edited file may end without a line break: the new entry must start on its own line.
+			if (insertAt > 0)
+			{
+				Item previous = _items[insertAt - 1];
+				if (previous.Entry is null)
+				{
+					if (previous.RawText.Length > 0 && !previous.RawText.EndsWith('\n'))
+					{
+						previous.RawText += _lineEnding;
+					}
+				}
+				else if (!previous.Entry.Trailing.EndsWith('\n'))
+				{
+					previous.Entry.Trailing += _lineEnding;
+				}
+			}
+
 			_items.Insert(insertAt, new Item(String.Empty, entry));
 			_byId[id] = entry;
 			MarkDirty();
@@ -173,7 +191,8 @@ namespace ProtoForge.Core.Formats.Msg
 				return false;
 			}
 
-			_items.RemoveAll(i => ReferenceEquals(i.Entry, entry));
+			// A damaged file may define an id twice: every copy goes, otherwise the earlier one would come back on save.
+			_items.RemoveAll(i => i.Entry is not null && i.Entry.Id == id);
 			MarkDirty();
 			return true;
 		}
@@ -214,7 +233,10 @@ namespace ProtoForge.Core.Formats.Msg
 
 		private static String Sanitize(String text)
 		{
-			return text.Replace('}', ')').Replace("{", "(", StringComparison.Ordinal);
+			// A carriage return must never reach the file (it would break the line ending of the entry): CRLF and CR become LF.
+			return text.Replace('}', ')').Replace("{", "(", StringComparison.Ordinal)
+				.Replace("\r\n", "\n", StringComparison.Ordinal)
+				.Replace('\r', '\n');
 		}
 
 		private void MarkDirty()
@@ -317,7 +339,8 @@ namespace ProtoForge.Core.Formats.Msg
 				return false;
 			}
 
-			Int32 close = text.IndexOf('}', p + 1);
+			// A message does not span more than a few kilobytes: bounding the search keeps a file full of '{' from being quadratic.
+			Int32 close = text.IndexOf('}', p + 1, Math.Min(text.Length - p - 1, 65536));
 			if (close < 0)
 			{
 				return false;

@@ -69,6 +69,11 @@ namespace ProtoForge.Core.Formats.Frm
 				offsets[i] = BigEndian.ReadInt32(data, 0x22 + (i * 4));
 			}
 
+			if (framesPerDirection < 0 || framesPerDirection > 4096)
+			{
+				throw new InvalidDataException("The FRM file has an invalid frame count.");
+			}
+
 			Int32 directionCount = 1;
 			for (Int32 i = 1; i < 6; i++)
 			{
@@ -82,7 +87,13 @@ namespace ProtoForge.Core.Formats.Frm
 			List<IReadOnlyList<FrmFrame>> directions = new(directionCount);
 			for (Int32 d = 0; d < directionCount; d++)
 			{
-				Int32 position = HeaderSize + offsets[d];
+				Int64 start = HeaderSize + (Int64)offsets[d];
+				if (offsets[d] < 0 || start > data.Length)
+				{
+					throw new InvalidDataException("The FRM file has an invalid direction offset.");
+				}
+
+				Int32 position = (Int32)start;
 				List<FrmFrame> frames = new(framesPerDirection);
 				for (Int32 f = 0; f < framesPerDirection; f++)
 				{

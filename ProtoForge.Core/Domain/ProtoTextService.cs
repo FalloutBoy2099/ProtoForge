@@ -2,6 +2,7 @@ namespace ProtoForge.Core.Domain
 {
 	using System;
 	using System.Collections.Generic;
+	using System.Linq;
 	using Formats.Msg;
 	using Formats.Pro;
 
@@ -11,11 +12,38 @@ namespace ProtoForge.Core.Domain
 	/// </summary>
 	public sealed class ProtoTextService
 	{
+		/// <summary>
+		/// Recent sfall versions turn the two characters backslash and n of a message into a line break. The description is shown with a
+		/// real line break and stored with that escape; the name never has one.
+		/// </summary>
+		private const String LineBreakEscape = "\\n";
+
+		/// <summary>The game shows no more than two lines for a description.</summary>
+		public const Int32 MaxDescriptionLines = 2;
+
 		private readonly MessageStore _store;
 
 		public ProtoTextService(MessageStore store)
 		{
 			_store = store;
+		}
+
+		/// <summary>The description as shown in the editor: the escapes become line breaks.</summary>
+		public static String ToDisplay(String stored)
+		{
+			return stored.Replace(LineBreakEscape, "\n", StringComparison.Ordinal);
+		}
+
+		/// <summary>The description as stored in the MSG file: line breaks become the escape (two lines at most, the others are joined with spaces).</summary>
+		public static String ToStored(String display)
+		{
+			String[] lines = display.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n');
+			if (lines.Length > MaxDescriptionLines)
+			{
+				lines = [.. lines.Take(MaxDescriptionLines - 1), String.Join(' ', lines.Skip(MaxDescriptionLines - 1).Where(l => l.Length > 0))];
+			}
+
+			return String.Join(LineBreakEscape, lines);
 		}
 
 		public MsgFile GetFile(ProtoObjectType type)
@@ -64,7 +92,7 @@ namespace ProtoForge.Core.Domain
 			}
 
 			MsgFile file = GetFile(entry.Type);
-			return (file.GetText(id) ?? String.Empty, file.GetText(id + 1) ?? String.Empty);
+			return (file.GetText(id) ?? String.Empty, ToDisplay(file.GetText(id + 1) ?? String.Empty));
 		}
 
 		/// <summary>True when the prototype has a usable message id, so its texts can be edited.</summary>
@@ -82,9 +110,20 @@ namespace ProtoForge.Core.Domain
 
 			Int32 id = entry.File!.MessageId;
 			MsgFile file = GetFile(entry.Type);
-			file.SetText(id, name);
-			file.SetText(id + 1, description);
-			entry.SetTexts(name, description, asBaseline: false);
+
+			// An empty text for an id the file does not have (the state before a first edit, restored by Undo) must not create an entry.
+			if (name.Length > 0 || file.Find(id) is not null)
+			{
+				file.SetText(id, name);
+			}
+
+			if (description.Length > 0 || file.Find(id + 1) is not null)
+			{
+				file.SetText(id + 1, ToStored(description));
+			}
+
+			// The file stores the sanitised text (no braces): show what is really stored.
+			entry.SetTexts(file.GetText(id) ?? String.Empty, ToDisplay(file.GetText(id + 1) ?? String.Empty), asBaseline: false);
 			return true;
 		}
 	}

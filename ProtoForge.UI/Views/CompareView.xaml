@@ -123,6 +123,7 @@
                     HeadersVisibility="Column"
                     IsReadOnly="True"
                     ItemsSource="{Binding RowsView}"
+                    RowHeight="NaN"
                     RowStyle="{StaticResource CompareRowStyle}"
                     SelectionMode="Single"
                     VirtualizingPanel.IsVirtualizing="True"
@@ -148,10 +149,12 @@
                         <DataGridTextColumn
                             Width="*"
                             Binding="{Binding ValueA}"
+                            ElementStyle="{StaticResource WrapCellText}"
                             Header="{loc:Loc compare.left}" />
                         <DataGridTextColumn
                             Width="*"
                             Binding="{Binding ValueB}"
+                            ElementStyle="{StaticResource WrapCellText}"
                             Header="{loc:Loc compare.right}" />
                     </ui:DataGrid.Columns>
                 </ui:DataGrid>

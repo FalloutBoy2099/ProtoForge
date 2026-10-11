@@ -60,14 +60,15 @@ namespace ProtoForge.Infrastructure.Layout
 			IniFile cfg = cfgPath is null ? IniFile.Parse(String.Empty) : IniFile.Parse(File.ReadAllBytes(cfgPath));
 			if (cfgPath is null)
 			{
-				messages.Add("No fallout2.cfg / fallout.cfg found: default file names were assumed.");
+				messages.Add(UserTexts.Format("discovery.noCfg", "No fallout2.cfg / fallout.cfg found: default file names were assumed."));
 			}
 
 			String masterDat = cfg.GetString("system", "master_dat", "master.dat");
 			String critterDat = cfg.GetString("system", "critter_dat", "critter.dat");
 			String masterPatches = cfg.GetString("system", "master_patches", "data");
 			String critterPatches = cfg.GetString("system", "critter_patches", masterPatches);
-			layout.Language = cfg.GetString("system", "language", "english");
+			String language = cfg.GetString("system", "language", "english");
+			layout.Language = System.Text.RegularExpressions.Regex.IsMatch(language, "^[A-Za-z0-9_-]{1,32}$") ? language : "english";
 
 			HashSet<String> seen = new(StringComparer.OrdinalIgnoreCase);
 			void Add(String? path, LayerRole role, String? name = null)
@@ -111,7 +112,7 @@ namespace ProtoForge.Infrastructure.Layout
 
 			if (!layout.Layers.Any(l => l.Role == LayerRole.Base))
 			{
-				messages.Add("master.dat / critter.dat were not found in the game folder.");
+				messages.Add(UserTexts.Format("discovery.noMasterDat", "master.dat / critter.dat were not found in the game folder."));
 			}
 
 			String dataFolder = ResolveInside(root, masterPatches);
@@ -136,7 +137,7 @@ namespace ProtoForge.Infrastructure.Layout
 			layout.OutputFolder = full;
 			if (baseGame is null)
 			{
-				messages.Add("Only the mod folder is loaded. Choose a game folder in the settings to see vanilla data and names.");
+				messages.Add(UserTexts.Format("discovery.modOnly", "Only the mod folder is loaded. Choose a game folder in the settings to see vanilla data and names."));
 			}
 
 			return new DiscoveryResult(layout, messages);
@@ -196,7 +197,7 @@ namespace ProtoForge.Infrastructure.Layout
 					.Where(n => n is not null)
 					.Select(n => n!)
 					.Order(StringComparer.OrdinalIgnoreCase));
-				messages.Add("mods_order.txt not found: mods are ordered alphabetically.");
+				messages.Add(UserTexts.Format("discovery.noModsOrder", "mods_order.txt not found: mods are ordered alphabetically."));
 			}
 
 			// In mods_order.txt later entries override earlier ones.
@@ -236,8 +237,17 @@ namespace ProtoForge.Infrastructure.Layout
 
 		private static String StripComment(String line)
 		{
-			Int32 cut = line.IndexOfAny([';', '#']);
-			return (cut >= 0 ? line[..cut] : line).Trim();
+			// A comment starts a line or follows a space: a '#' or ';' inside a folder name belongs to the name.
+			String trimmed = line.Trim();
+			for (Int32 i = 0; i < trimmed.Length; i++)
+			{
+				if (trimmed[i] is ';' or '#' && (i == 0 || Char.IsWhiteSpace(trimmed[i - 1])))
+				{
+					return trimmed[..i].TrimEnd();
+				}
+			}
+
+			return trimmed;
 		}
 	}
 }

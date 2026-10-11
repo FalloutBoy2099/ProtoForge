@@ -98,6 +98,7 @@ namespace ProtoForge.UI.ViewModels
 
 		[ObservableProperty]
 		private Boolean _hasRun;
+		private GameWorkspace? _lastWorkspace;
 
 		[ObservableProperty]
 		private IssueRow? _selectedRow;
@@ -110,11 +111,14 @@ namespace ProtoForge.UI.ViewModels
 			_notifier = notifier;
 			_workspaceService.WorkspaceChanged += (_, ws) =>
 			{
-				if (ws is null || !HasRun)
+				if (ws is null || !HasRun || !ReferenceEquals(ws, _lastWorkspace))
 				{
 					Reset();
 				}
+
+				_lastWorkspace = ws;
 			};
+			_lastWorkspace = _workspaceService.Current;
 			Summary = Loc.Get("validation.notRun");
 			RunCommand.NotifyCanExecuteChanged();
 		}
@@ -225,13 +229,20 @@ namespace ProtoForge.UI.ViewModels
 					: $"[{row.Severity}] {row.PidText} {row.EntryName}: {row.Message}");
 			}
 
-			File.WriteAllText(path, builder.ToString(), new UTF8Encoding(true));
-			_notifier.Success(Loc.Get("validation.title"), Loc.Format("export.done", _rows.Count, Path.GetFileName(path)));
+			try
+			{
+				File.WriteAllText(path, builder.ToString(), new UTF8Encoding(true));
+				_notifier.Success(Loc.Get("validation.title"), Loc.Format("export.done", _rows.Count, Path.GetFileName(path)));
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				_notifier.Error(Loc.Get("validation.title"), ex.Message);
+			}
 		}
 
 		private static String Quote(String text)
 		{
-			return "\"" + text.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+			return "\"" + ProtoForge.Core.Serialization.ProtoCsv.EscapeText(text).Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
 		}
 
 		private Boolean Matches(Object item)

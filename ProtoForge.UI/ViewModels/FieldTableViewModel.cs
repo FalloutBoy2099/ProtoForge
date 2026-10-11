@@ -53,9 +53,9 @@ namespace ProtoForge.UI.ViewModels
 			}
 		}
 
-		public Boolean IsReadOnly
+		public Boolean IsEditable
 		{
-			get { return Field.IsReadOnly; }
+			get { return !Field.IsReadOnly; }
 		}
 
 		public void Refresh(Int32? value, Boolean changed)

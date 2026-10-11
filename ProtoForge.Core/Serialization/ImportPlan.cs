@@ -59,6 +59,16 @@ namespace ProtoForge.Core.Serialization
 				return;
 			}
 
+			Boolean fits = field.IsVirtual
+				? value >= 0 && ((unchecked((UInt32)value) << field.Shift) & ~field.Mask) == 0
+				: field.Size != 1 || value is >= 0 and <= 255;
+			if (!fits)
+			{
+				// A one-byte field or a bit field would silently store another number than the one in the file.
+				Warnings.Add($"{entry.Pid}: the value {value} does not fit the field '{field.Key}'; skipped.");
+				return;
+			}
+
 			if (current.Value != value)
 			{
 				FieldChanges.Add(new FieldChange(entry, field, current.Value, value));
@@ -67,6 +77,16 @@ namespace ProtoForge.Core.Serialization
 
 		internal void AddText(ProtoEntry entry, String? name, String? description)
 		{
+			if (entry.File is not { MessageId: > 0 })
+			{
+				if (name is not null || description is not null)
+				{
+					Warnings.Add($"{entry.Pid}: this prototype has no message id, its texts cannot be changed.");
+				}
+
+				return;
+			}
+
 			String newName = name ?? entry.Name;
 			String newDescription = description ?? entry.Description;
 			if (newName != entry.Name || newDescription != entry.Description)

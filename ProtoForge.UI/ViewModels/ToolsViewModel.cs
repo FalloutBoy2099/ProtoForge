@@ -52,6 +52,7 @@ namespace ProtoForge.UI.ViewModels
 		private readonly UserTemplateStore _templates;
 		private readonly IDialogService _dialogs;
 		private readonly INotifier _notifier;
+		private readonly ShellNavigator _shell;
 
 		[ObservableProperty]
 		private ExportScope? _selectedScope;
@@ -106,8 +107,9 @@ namespace ProtoForge.UI.ViewModels
 		[ObservableProperty]
 		private String _extractStatus = String.Empty;
 
-		public ToolsViewModel(WorkspaceService workspaceService, ExchangeService exchange, SettingsService settings, UserTemplateStore templates, IDialogService dialogs, INotifier notifier)
+		public ToolsViewModel(WorkspaceService workspaceService, ExchangeService exchange, SettingsService settings, UserTemplateStore templates, IDialogService dialogs, INotifier notifier, ShellNavigator shell)
 		{
+			_shell = shell;
 			_workspaceService = workspaceService;
 			_exchange = exchange;
 			_settings = settings;
@@ -258,7 +260,11 @@ namespace ProtoForge.UI.ViewModels
 				actions.Add(new AddProtoAction(workspace.Catalog, workspace.Texts, type, file, ProtoDuplicator.FormatFileName(index), workspace.OutputSourceName, String.Empty, String.Empty, "Create"));
 			}
 
-			workspace.Undo.Execute(new CompositeAction(actions, Loc.Format("tools.massUndo", created)));
+			using (workspace.Catalog.SuspendNotifications())
+			{
+				workspace.Undo.Execute(new CompositeAction(actions, Loc.Format("tools.massUndo", created)));
+			}
+
 			_notifier.Success(Loc.Get("tools.mass"), Loc.Format("tools.massDone", created, new ProtoId(first)));
 		}
 
@@ -427,8 +433,15 @@ namespace ProtoForge.UI.ViewModels
 				return;
 			}
 
-			Int32 index = workspace.AddArt(type, name, frm);
-			_notifier.Success(Loc.Get("art.add"), Loc.Format("art.added", name, index, FrameId.GetFolderName(type)));
+			try
+			{
+				Int32 index = workspace.AddArt(type, name, frm);
+				_notifier.Success(Loc.Get("art.add"), Loc.Format("art.added", name, index, FrameId.GetFolderName(type)));
+			}
+			catch (InvalidOperationException ex)
+			{
+				_notifier.Error(Loc.Get("art.add"), ex.Message);
+			}
 		}
 
 		/// <summary>Copies the art of the game (from the DAT archives and the mods) to a folder, with a progress bar.</summary>
@@ -546,6 +559,7 @@ namespace ProtoForge.UI.ViewModels
 			{
 				_templates.Delete(template.DisplayName);
 				Refresh();
+				_shell.NotifyTemplatesChanged();
 			}
 		}
 
@@ -594,8 +608,15 @@ namespace ProtoForge.UI.ViewModels
 
 		private void OpenFolder(String folder)
 		{
-			Directory.CreateDirectory(folder);
-			Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+			try
+			{
+				Directory.CreateDirectory(folder);
+				Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+			{
+				_notifier.Error(Loc.Get("tools.title"), ex.Message);
+			}
 		}
 	}
 }

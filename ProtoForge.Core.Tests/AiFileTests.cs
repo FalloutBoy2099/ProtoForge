@@ -67,7 +67,7 @@ namespace ProtoForge.Core.Tests
 
 			undo.Execute(new AiValueAction(file, "Rat", "aggression", "99"));
 			undo.Execute(new AiAddPacketAction(file, "New", AiFile.CreateDefaultPacketLines(9)));
-			undo.Execute(new AiRemovePacketAction(file, "Rat"));
+			undo.Execute(new AiRemovePacketAction(file, file.Find("Rat")!));
 			undo.Execute(new AiRawTextAction(file, "Boss", "packet_num=8\r\nfoo=bar"));
 
 			Assert.Equal(["Boss", "New"], file.Sections.Select(s => s.Name));

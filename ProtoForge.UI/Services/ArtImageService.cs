@@ -4,6 +4,7 @@ namespace ProtoForge.UI.Services
 	using System.Collections.Concurrent;
 	using System.Collections.Generic;
 	using System.Linq;
+	using System.Threading;
 	using System.Threading.Tasks;
 	using System.Windows.Media;
 	using System.Windows.Media.Imaging;
@@ -21,6 +22,8 @@ namespace ProtoForge.UI.Services
 	{
 		private readonly ConcurrentDictionary<String, BitmapSource?> _cache = new(StringComparer.Ordinal);
 		private readonly ConcurrentDictionary<String, ArtAnimation?> _animations = new(StringComparer.Ordinal);
+		private Int32 _generation;
+		private const Int32 MaxCachedImages = 4000;
 		private GameWorkspace? _workspace;
 
 		public void Attach(GameWorkspace? workspace)
@@ -31,6 +34,7 @@ namespace ProtoForge.UI.Services
 			}
 
 			_workspace = workspace;
+			Interlocked.Increment(ref _generation);
 			_cache.Clear();
 			_animations.Clear();
 			if (workspace is not null)
@@ -41,8 +45,50 @@ namespace ProtoForge.UI.Services
 
 		private void OnArtChanged(Object? sender, EventArgs e)
 		{
+			Interlocked.Increment(ref _generation);
 			_cache.Clear();
 			_animations.Clear();
+		}
+
+		/// <summary>
+		/// The image of a frame id, decoded on the calling thread (for bindings that already run on a worker thread: waiting for another
+		/// task from there would starve the thread pool while scrolling).
+		/// </summary>
+		public BitmapSource? GetBitmap(FrameId fid, Int32 direction = -1)
+		{
+			GameWorkspace? workspace = _workspace;
+			String? path = workspace is null || fid.IsNone ? null : workspace.Art.ResolvePath(fid);
+			if (workspace is null || path is null)
+			{
+				return null;
+			}
+
+			String key = $"{path}|{direction}";
+			if (_cache.TryGetValue(key, out BitmapSource? cached))
+			{
+				return cached;
+			}
+
+			Int32 generation = Volatile.Read(ref _generation);
+			BitmapSource? bitmap = Decode(workspace, path, direction);
+			Store(key, bitmap, generation);
+			return bitmap;
+		}
+
+		/// <summary>Keeps a decoded image unless the game or the art changed meanwhile, and keeps the cache from growing for ever.</summary>
+		private void Store(String key, BitmapSource? bitmap, Int32 generation)
+		{
+			if (generation != Volatile.Read(ref _generation))
+			{
+				return;
+			}
+
+			if (_cache.Count > MaxCachedImages)
+			{
+				_cache.Clear();
+			}
+
+			_cache[key] = bitmap;
 		}
 
 		/// <summary>All the frames of a direction (the default direction of a critter is south-west), for animated previews.</summary>
@@ -61,10 +107,20 @@ namespace ProtoForge.UI.Services
 				return Task.FromResult(cached);
 			}
 
+			Int32 generation = Volatile.Read(ref _generation);
 			return Task.Run(() =>
 			{
 				ArtAnimation? animation = DecodeAnimation(workspace, path, direction);
-				_animations[key] = animation;
+				if (generation == Volatile.Read(ref _generation))
+				{
+					if (_animations.Count > 200)
+					{
+						_animations.Clear();
+					}
+
+					_animations[key] = animation;
+				}
+
 				return animation;
 			});
 		}
@@ -141,10 +197,11 @@ namespace ProtoForge.UI.Services
 				return Task.FromResult(cached);
 			}
 
+			Int32 generation = Volatile.Read(ref _generation);
 			return Task.Run(() =>
 			{
 				BitmapSource? bitmap = Decode(workspace, path, direction);
-				_cache[key] = bitmap;
+				Store(key, bitmap, generation);
 				return bitmap;
 			});
 		}

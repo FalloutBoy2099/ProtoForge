@@ -95,9 +95,9 @@ namespace ProtoForge.Core.Serialization
 				List<String> cells =
 				[
 					entry.Pid.ToString(),
-					entry.FileName,
-					entry.Name,
-					entry.Description,
+					EscapeText(entry.FileName),
+					EscapeText(entry.Name),
+					EscapeText(entry.Description),
 				];
 				foreach (ProtoField field in fields)
 				{
@@ -235,12 +235,31 @@ namespace ProtoForge.Core.Serialization
 					plan.AddField(entry, field, value);
 				}
 
-				String? name = nameColumn >= 0 && nameColumn < row.Count ? row[nameColumn] : null;
-				String? description = descriptionColumn >= 0 && descriptionColumn < row.Count ? row[descriptionColumn] : null;
+				String? name = nameColumn >= 0 && nameColumn < row.Count ? UnescapeText(row[nameColumn]) : null;
+				String? description = descriptionColumn >= 0 && descriptionColumn < row.Count ? UnescapeText(row[descriptionColumn]) : null;
 				plan.AddText(entry, name, description);
 			}
 
 			return plan;
+		}
+
+		private static Boolean StartsLikeFormula(String text)
+		{
+			return text.Length > 0 && text[0] is '=' or '+' or '-' or '@' or '\t' or '\r';
+		}
+
+		/// <summary>
+		/// A spreadsheet runs a cell that starts with = + - @ as a formula. Texts come from game files of unknown origin, so they get
+		/// a leading apostrophe (removed again when the file is imported).
+		/// </summary>
+		public static String EscapeText(String text)
+		{
+			return StartsLikeFormula(text) ? "'" + text : text;
+		}
+
+		public static String UnescapeText(String text)
+		{
+			return text.Length > 1 && text[0] == '\'' && StartsLikeFormula(text[1..]) ? text[1..] : text;
 		}
 
 		private static Boolean TryFindFlag(ProtoSchema schema, String column, out ProtoField? field, out FlagBit? bit)

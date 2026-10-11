@@ -7,7 +7,7 @@
     Title="Settings"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="False">
-	
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel
             MaxWidth="980"
@@ -306,5 +306,5 @@
             </Border>
         </StackPanel>
     </ScrollViewer>
-	
+
 </Page>

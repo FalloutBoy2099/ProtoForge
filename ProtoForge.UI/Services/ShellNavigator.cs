@@ -47,6 +47,14 @@ namespace ProtoForge.UI.Services
 			PairCompareRequested?.Invoke(this, (a, b));
 		}
 
+		/// <summary>Raised when a user template was saved or deleted (the "New" menu must list it).</summary>
+		public event EventHandler? TemplatesChanged;
+
+		public void NotifyTemplatesChanged()
+		{
+			TemplatesChanged?.Invoke(this, EventArgs.Empty);
+		}
+
 		public void FocusList()
 		{
 			FocusListRequested?.Invoke(this, EventArgs.Empty);

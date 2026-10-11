@@ -114,7 +114,22 @@ namespace ProtoForge.Core.Editing
 		public void MarkSaved()
 		{
 			_savedVersion = _version;
+
+			// An edit made right after saving must not be merged into the action that was just saved.
+			_lastExecuted = DateTime.MinValue;
 			RaiseChanged();
+		}
+
+		/// <summary>
+		/// Drops matching actions from the undo list, for actions that cannot be undone any more once saved (the file they created is on
+		/// disk). Call it right after saving.
+		/// </summary>
+		public void Forget(Func<IUndoableAction, Boolean> predicate)
+		{
+			if (_undo.RemoveAll(a => predicate(a)) > 0)
+			{
+				RaiseChanged();
+			}
 		}
 
 		public void Clear()
@@ -136,6 +151,12 @@ namespace ProtoForge.Core.Editing
 				_lastExecuted = now;
 				RaiseChanged();
 				return;
+			}
+
+			if (_savedVersion > _version)
+			{
+				// The saved state belonged to the redo list that was just discarded: it can never be reached again.
+				_savedVersion = Int32.MinValue;
 			}
 
 			_undo.Add(action);

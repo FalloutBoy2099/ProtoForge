@@ -1,0 +1,278 @@
+<UserControl
+    x:Class="ProtoForge.UI.Controls.SearchBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Height="28"
+    MinWidth="160">
+
+    <UserControl.Resources>
+        <FontFamily x:Key="SearchIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+        <!--  A flat button that never takes the focus, so that the box keeps it (and the popup stays open) while it is clicked  -->
+        <Style x:Key="SuggestionButton" TargetType="Button">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border
+                            x:Name="Root"
+                            Padding="8,4"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="4">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SearchFrame" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                </Trigger>
+                <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=Input}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource ControlFillColorInputActiveBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Border x:Name="Frame" Style="{StaticResource SearchFrame}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ui:SymbolIcon
+                    Margin="8,0,6,0"
+                    FontSize="14"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Symbol="Search24" />
+
+                <Grid Grid.Column="1" VerticalAlignment="Center">
+                    <TextBox
+                        x:Name="Input"
+                        Padding="0"
+                        VerticalContentAlignment="Center"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        CaretBrush="{DynamicResource TextFillColorPrimaryBrush}"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                        GotKeyboardFocus="OnInputGotFocus"
+                        LostKeyboardFocus="OnInputLostFocus"
+                        SelectionBrush="{DynamicResource AccentFillColorDefaultBrush}"
+                        Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                        TextChanged="OnInputTextChanged">
+                        <TextBox.Template>
+                            <ControlTemplate TargetType="TextBox">
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="False" />
+                            </ControlTemplate>
+                        </TextBox.Template>
+                    </TextBox>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        IsHitTestVisible="False"
+                        Text="{loc:Loc search.hint}"
+                        TextTrimming="CharacterEllipsis">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=Input}" Value="">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+
+                <!--  Ctrl+F reminder while the box is empty, clear button once there is something to clear  -->
+                <TextBlock
+                    Grid.Column="2"
+                    Margin="0,0,8,0"
+                    VerticalAlignment="Center"
+                    FontSize="10"
+                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                    IsHitTestVisible="False"
+                    Text="Ctrl+F">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Text, ElementName=Input}" Value="" />
+                                        <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=Input}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <Button
+                    x:Name="ClearButton"
+                    Grid.Column="2"
+                    Width="24"
+                    Height="22"
+                    Margin="0,0,3,0"
+                    AutomationProperties.Name="{loc:Loc search.clear}"
+                    Click="OnClearClick"
+                    Focusable="False"
+                    ToolTip="{loc:Loc search.clear}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border
+                                            x:Name="Root"
+                                            Background="Transparent"
+                                            CornerRadius="3">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource SearchIconFont}"
+                                                FontSize="10"
+                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                Text="&#xE711;" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Text, ElementName=Input, Converter={StaticResource NotEmpty}}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Popup
+            x:Name="SuggestionsPopup"
+            MinWidth="{Binding ActualWidth, ElementName=Frame}"
+            AllowsTransparency="True"
+            Placement="Bottom"
+            PlacementTarget="{Binding ElementName=Frame}"
+            StaysOpen="True"
+            VerticalOffset="4">
+            <Border
+                MaxWidth="460"
+                Margin="8"
+                Padding="4"
+                Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Border.Effect>
+                    <DropShadowEffect
+                        BlurRadius="12"
+                        Opacity="0.35"
+                        ShadowDepth="2" />
+                </Border.Effect>
+                <StackPanel>
+                    <ItemsControl x:Name="SuggestionList">
+                        <ItemsControl.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            Margin="8,6,8,2"
+                                            FontSize="10"
+                                            FontWeight="SemiBold"
+                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                            Text="{Binding Name}" />
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ItemsControl.GroupStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Click="OnSuggestionClick"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource SuggestionButton}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            MinWidth="76"
+                                            Margin="0,0,10,0"
+                                            FontFamily="Consolas"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                            Text="{Binding Label}" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            FontSize="11"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding Description}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <Border
+                                            Grid.Column="2"
+                                            Margin="8,0,0,0"
+                                            Padding="4,0"
+                                            VerticalAlignment="Center"
+                                            Background="{DynamicResource ControlFillColorTertiaryBrush}"
+                                            CornerRadius="3"
+                                            Visibility="{Binding IsFirst, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                Text="Tab" />
+                                        </Border>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button
+                        x:Name="ClearHistoryButton"
+                        Click="OnClearHistoryClick"
+                        Style="{StaticResource SuggestionButton}">
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{loc:Loc search.clearHistory}" />
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

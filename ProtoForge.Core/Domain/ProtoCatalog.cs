@@ -38,7 +38,52 @@ namespace ProtoForge.Core.Domain
 		private readonly Dictionary<ProtoObjectType, LstFile> _originalLists = [];
 		private readonly Dictionary<Int32, ProtoEntry> _byPid = [];
 
+		private Int32 _suspended;
+		private Boolean _changedWhileSuspended;
+
 		public event EventHandler<CatalogChangedEventArgs>? Changed;
+
+		/// <summary>
+		/// Holds back the change notifications until the returned object is disposed, then raises a single "reset". Adding thousands of
+		/// prototypes at once would otherwise make every list refresh once per prototype.
+		/// </summary>
+		public IDisposable SuspendNotifications()
+		{
+			_suspended++;
+			return new Resume(this);
+		}
+
+		private sealed class Resume : IDisposable
+		{
+			private ProtoCatalog? _catalog;
+
+			public Resume(ProtoCatalog catalog)
+			{
+				_catalog = catalog;
+			}
+
+			public void Dispose()
+			{
+				ProtoCatalog? catalog = _catalog;
+				_catalog = null;
+				if (catalog is not null && --catalog._suspended == 0 && catalog._changedWhileSuspended)
+				{
+					catalog._changedWhileSuspended = false;
+					catalog.Changed?.Invoke(catalog, new CatalogChangedEventArgs(CatalogChangeKind.Reset, null));
+				}
+			}
+		}
+
+		private void RaiseChanged(CatalogChangeKind kind, ProtoEntry? entry)
+		{
+			if (_suspended > 0)
+			{
+				_changedWhileSuspended = true;
+				return;
+			}
+
+			Changed?.Invoke(this, new CatalogChangedEventArgs(kind, entry));
+		}
 
 		public Int32 Count
 		{
@@ -128,7 +173,7 @@ namespace ProtoForge.Core.Domain
 				_byPid[entry.Pid.Value] = entry;
 			}
 
-			Changed?.Invoke(this, new CatalogChangedEventArgs(CatalogChangeKind.Reset, null));
+			RaiseChanged(CatalogChangeKind.Reset, null);
 		}
 
 		/// <summary>Appends a prototype at the end of its LST. The caller provides a file whose PID already matches the new index.</summary>
@@ -146,7 +191,7 @@ namespace ProtoForge.Core.Domain
 			list.Add(entry);
 			GetList(type).Add(fileName);
 			_byPid[entry.Pid.Value] = entry;
-			Changed?.Invoke(this, new CatalogChangedEventArgs(CatalogChangeKind.Added, entry));
+			RaiseChanged(CatalogChangeKind.Added, entry);
 			return entry;
 		}
 
@@ -168,7 +213,7 @@ namespace ProtoForge.Core.Domain
 			list.Add(entry);
 			GetList(type).Add(entry.FileName);
 			_byPid[entry.Pid.Value] = entry;
-			Changed?.Invoke(this, new CatalogChangedEventArgs(CatalogChangeKind.Added, entry));
+			RaiseChanged(CatalogChangeKind.Added, entry);
 		}
 
 		/// <summary>Removes the last prototype of a type (undo of <see cref="Append"/>).</summary>
@@ -183,7 +228,7 @@ namespace ProtoForge.Core.Domain
 			list.RemoveAt(list.Count - 1);
 			GetList(type).RemoveLast();
 			_byPid.Remove(entry.Pid.Value);
-			Changed?.Invoke(this, new CatalogChangedEventArgs(CatalogChangeKind.Removed, entry));
+			RaiseChanged(CatalogChangeKind.Removed, entry);
 			return entry;
 		}
 

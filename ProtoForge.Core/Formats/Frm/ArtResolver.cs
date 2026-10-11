@@ -30,6 +30,11 @@ namespace ProtoForge.Core.Formats.Frm
 
 		public LstFile? GetList(ArtType type)
 		{
+			if (!Enum.IsDefined(type))
+			{
+				return null;
+			}
+
 			lock (_lists)
 			{
 				if (!_lists.TryGetValue(type, out LstFile? list))
@@ -61,8 +66,9 @@ namespace ProtoForge.Core.Formats.Frm
 		/// <summary>Virtual path of the FRM file for a frame ID, or null when the ID cannot be resolved.</summary>
 		public String? ResolvePath(FrameId fid)
 		{
-			if (fid.IsNone)
+			if (fid.IsNone || !Enum.IsDefined(fid.Type))
 			{
+				// 0xCCCCCCCC and other garbage values have a type that does not exist.
 				return null;
 			}
 
@@ -118,14 +124,14 @@ namespace ProtoForge.Core.Formats.Frm
 			IReadOnlyList<String> files = _files.Enumerate("art/heads");
 			foreach (String suffix in PortraitSuffixes)
 			{
-				String candidate = $"art/heads/{name}{suffix}.frm";
+				String candidate = $"art/heads/{name.ToLowerInvariant()}{suffix}.frm";
 				if (files.Contains(candidate, StringComparer.Ordinal))
 				{
 					return candidate;
 				}
 			}
 
-			String prefix = $"art/heads/{name}";
+			String prefix = $"art/heads/{name.ToLowerInvariant()}";
 			return files.FirstOrDefault(f => f.StartsWith(prefix, StringComparison.Ordinal));
 		}
 	}

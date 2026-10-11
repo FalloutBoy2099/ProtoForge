@@ -12,7 +12,12 @@ namespace ProtoForge.Core.Formats.Frm
 
 		public static Byte[] Write(FrmFile file)
 		{
-			Int32 directionCount = file.Directions.Count == 1 ? 1 : 6;
+			if (file.Directions.Count is not (1 or 6))
+			{
+				throw new ArgumentException("A FRM has one or six directions.", nameof(file));
+			}
+
+			Int32 directionCount = file.Directions.Count;
 			Int32 framesPerDirection = file.FrameCount;
 
 			// Size of the frame area and the offset of each direction (relative to the end of the header).

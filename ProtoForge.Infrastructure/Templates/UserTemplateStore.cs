@@ -7,6 +7,7 @@ namespace ProtoForge.Infrastructure.Templates
 	using ProtoForge.Core.Formats.Pro;
 	using ProtoForge.Core.IO;
 	using ProtoForge.Core.Templates;
+	using ProtoForge.Core.Vfs;
 	using Settings;
 
 	/// <summary>
@@ -32,7 +33,16 @@ namespace ProtoForge.Infrastructure.Templates
 			List<ProtoTemplate> templates = [];
 			foreach (String file in Directory.EnumerateFiles(_folder, "*.pro").Order(StringComparer.OrdinalIgnoreCase))
 			{
-				Byte[] bytes = File.ReadAllBytes(file);
+				Byte[] bytes;
+				try
+				{
+					bytes = File.ReadAllBytes(file);
+				}
+				catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+				{
+					continue;
+				}
+
 				if (bytes.Length < 12)
 				{
 					continue;
@@ -52,25 +62,61 @@ namespace ProtoForge.Infrastructure.Templates
 			return templates;
 		}
 
+		/// <summary>True when a template with this name (after cleaning it for the file system) already exists.</summary>
+		public Boolean Exists(String name)
+		{
+			return File.Exists(GetPath(name));
+		}
+
 		public void Save(String name, ProtoFile file)
 		{
 			Directory.CreateDirectory(_folder);
-			String safe = String.Concat(name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim();
+			String path = GetPath(name);
+
+			// Written beside the final file and swapped in, so that a failure never leaves a half-written template.
+			String temp = path + ".protoforge-tmp";
+			File.WriteAllBytes(temp, file.ToArray());
+			try
+			{
+				File.Move(temp, path, overwrite: true);
+			}
+			catch
+			{
+				File.Delete(temp);
+				throw;
+			}
+		}
+
+		public void Delete(String name)
+		{
+			String path = GetPath(name);
+			if (File.Exists(path))
+			{
+				File.Delete(path);
+			}
+		}
+
+		/// <summary>The file of a template. Characters that a file name cannot hold become '_', and reserved device names are prefixed.</summary>
+		private String GetPath(String name)
+		{
+			Char[] invalid = Path.GetInvalidFileNameChars();
+			String safe = String.Concat(name.Select(c => invalid.Contains(c) || Char.IsControl(c) ? '_' : c)).Trim().TrimEnd('.');
 			if (safe.Length == 0)
 			{
 				throw new ArgumentException("The template name is empty.", nameof(name));
 			}
 
-			File.WriteAllBytes(Path.Combine(_folder, safe + ".pro"), file.ToArray());
-		}
-
-		public void Delete(String name)
-		{
-			String path = Path.Combine(_folder, name + ".pro");
-			if (File.Exists(path))
+			if (safe.Length > 100)
 			{
-				File.Delete(path);
+				safe = safe[..100].TrimEnd();
 			}
+
+			if (GamePath.IsDeviceName(safe))
+			{
+				safe = "_" + safe;
+			}
+
+			return Path.Combine(_folder, safe + ".pro");
 		}
 	}
 }

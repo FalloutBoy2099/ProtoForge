@@ -134,7 +134,7 @@ namespace ProtoForge.UI.Converters
 			}
 
 			ArtImageService art = (ArtImageService)App.Services.GetService(typeof(ArtImageService))!;
-			return art.GetAsync(new ProtoForge.Core.Formats.Frm.FrameId(fid.Value)).GetAwaiter().GetResult();
+			return art.GetBitmap(new ProtoForge.Core.Formats.Frm.FrameId(fid.Value));
 		}
 
 		public Object ConvertBack(Object? value, Type targetType, Object? parameter, CultureInfo culture)
@@ -217,6 +217,34 @@ namespace ProtoForge.UI.Converters
 		}
 
 		public Object[] ConvertBack(Object? value, Type[] targetTypes, Object? parameter, CultureInfo culture)
+		{
+			throw new NotSupportedException();
+		}
+	}
+
+	/// <summary>Turns a boolean around (used to enable a control while a flag is NOT set).</summary>
+	public sealed class InverseBooleanConverter : IValueConverter
+	{
+		public Object Convert(Object? value, Type targetType, Object? parameter, CultureInfo culture)
+		{
+			return value is not true;
+		}
+
+		public Object ConvertBack(Object? value, Type targetType, Object? parameter, CultureInfo culture)
+		{
+			return value is not true;
+		}
+	}
+
+	/// <summary>True when a text is not empty.</summary>
+	public sealed class NotEmptyConverter : IValueConverter
+	{
+		public Object Convert(Object? value, Type targetType, Object? parameter, CultureInfo culture)
+		{
+			return value is String { Length: > 0 };
+		}
+
+		public Object ConvertBack(Object? value, Type targetType, Object? parameter, CultureInfo culture)
 		{
 			throw new NotSupportedException();
 		}

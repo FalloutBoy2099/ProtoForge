@@ -48,6 +48,7 @@ namespace ProtoForge.UI.ViewModels
 		private Boolean _refreshing;
 		private Boolean _refreshQueued;
 		private Int32 _previewDirection = -1;
+		private Int32 _previewVersion;
 		private Int32 _directionCount = 1;
 		private Int32 _soundLetter;
 		private Int32 _soundStep;
@@ -202,8 +203,16 @@ namespace ProtoForge.UI.ViewModels
 			HasSelection = entries.Count > 0;
 			IsMultiple = _context.Entries.Count > 1;
 			Problem = entries.Count == 1 && entries[0].File is null ? DescribeProblem(entries[0]) : String.Empty;
-			BuildGroups();
-			_groupsSignature = GetSignature();
+
+			// The editors read the selection through the context: the same fields (and the same controls) serve the next prototype of the
+			// same kind, so changing the selected row only reloads their values. They are rebuilt only when the kind of the selection changes.
+			String signature = GetSignature();
+			if (Groups.Count == 0 || signature != _groupsSignature)
+			{
+				BuildGroups();
+				_groupsSignature = signature;
+			}
+
 			RefreshAll();
 			OnPropertyChanged(nameof(Selection));
 			OnPropertyChanged(nameof(Single));
@@ -233,7 +242,20 @@ namespace ProtoForge.UI.ViewModels
 				return;
 			}
 
-			_ = ChangeKindAsync(value);
+			_ = ObserveAsync(ChangeKindAsync(value));
+		}
+
+		/// <summary>Runs a task that nobody awaits so that its failure is reported instead of being lost.</summary>
+		private async Task ObserveAsync(Task task)
+		{
+			try
+			{
+				await task;
+			}
+			catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException)
+			{
+				_notifier.Error(Loc.Get("kind.changeTitle"), ex.Message);
+			}
 		}
 
 		private async Task ChangeKindAsync(KindOption target)
@@ -261,6 +283,13 @@ namespace ProtoForge.UI.ViewModels
 
 		partial void OnDescriptionChanged(String value)
 		{
+			if (value.Contains('\r', StringComparison.Ordinal))
+			{
+				// The box uses CRLF for a line break, the texts use LF.
+				Description = value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+				return;
+			}
+
 			ApplyText();
 		}
 
@@ -309,7 +338,22 @@ namespace ProtoForge.UI.ViewModels
 				return;
 			}
 
-			_templates.Save(name, file);
+			if (_templates.Exists(name) && !await _dialogs.ConfirmAsync(Loc.Get("template.saveTitle"), Loc.Format("template.overwrite", name), Loc.Get("template.replace")))
+			{
+				return;
+			}
+
+			try
+			{
+				_templates.Save(name, file);
+			}
+			catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException)
+			{
+				_notifier.Error(Loc.Get("template.saveTitle"), ex.Message);
+				return;
+			}
+
+			_shell.NotifyTemplatesChanged();
 			_notifier.Success(Loc.Get("template.saveTitle"), Loc.Format("template.saved", name));
 		}
 
@@ -799,12 +843,18 @@ namespace ProtoForge.UI.ViewModels
 		{
 			ProtoFile file = entry.File!;
 			ProtoEntry expected = entry;
+			Int32 version = ++_previewVersion;
 			Int32? groundValue = file.TryGet(FieldKeys.FrmId);
-			ArtAnimation? animation = groundValue is null || groundValue.Value == -1 ? null : await _context.Art.GetAnimationAsync(new FrameId(groundValue.Value), _previewDirection);
+			Task<ArtAnimation?> groundTask = groundValue is null || groundValue.Value == -1
+				? Task.FromResult<ArtAnimation?>(null)
+				: _context.Art.GetAnimationAsync(new FrameId(groundValue.Value), _previewDirection);
+			Task<ImageSource?> inventoryTask = LoadAsync(file, FieldKeys.InventoryFrmId);
+			Task<ImageSource?> portraitTask = LoadAsync(file, FieldKeys.HeadFrmId);
+			ArtAnimation? animation = await groundTask;
 			ImageSource? ground = animation?.Frames[0];
-			ImageSource? inventory = await LoadAsync(file, FieldKeys.InventoryFrmId);
-			ImageSource? portrait = await LoadAsync(file, FieldKeys.HeadFrmId);
-			if (ReferenceEquals(Single, expected))
+			ImageSource? inventory = await inventoryTask;
+			ImageSource? portrait = await portraitTask;
+			if (ReferenceEquals(Single, expected) && version == _previewVersion)
 			{
 				_directionCount = animation?.DirectionCount ?? 1;
 				GroundFrames = animation?.Frames.Cast<ImageSource>().ToList();
@@ -813,6 +863,46 @@ namespace ProtoForge.UI.ViewModels
 				InventoryImage = inventory;
 				PortraitImage = portrait;
 			}
+		}
+
+		/// <summary>Decodes the images of prototypes the user is likely to select next, so that selecting them is instant.</summary>
+		public void Prefetch(IReadOnlyList<ProtoEntry> entries)
+		{
+			ArtImageService art = _context.Art;
+			List<(Int32 Ground, Int32 Inventory, Int32 Head)> ids = [];
+			foreach (ProtoEntry entry in entries)
+			{
+				if (entry.File is { } file)
+				{
+					ids.Add((file.TryGet(FieldKeys.FrmId) ?? -1, file.TryGet(FieldKeys.InventoryFrmId) ?? -1, file.TryGet(FieldKeys.HeadFrmId) ?? -1));
+				}
+			}
+
+			_ = Task.Run(async () =>
+			{
+				foreach ((Int32 ground, Int32 inventory, Int32 head) in ids)
+				{
+					try
+					{
+						if (ground != -1)
+						{
+							await art.GetAnimationAsync(new FrameId(ground), _previewDirection);
+						}
+
+						foreach (Int32 value in new[] { inventory, head })
+						{
+							if (value != -1)
+							{
+								await art.GetAsync(new FrameId(value));
+							}
+						}
+					}
+					catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException or System.IO.InvalidDataException)
+					{
+						// A broken image is reported when its prototype is selected: here it only means nothing is cached.
+					}
+				}
+			});
 		}
 
 		private async Task<ImageSource?> LoadAsync(ProtoFile file, String key)

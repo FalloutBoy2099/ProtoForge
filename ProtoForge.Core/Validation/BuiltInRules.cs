@@ -391,7 +391,8 @@ namespace ProtoForge.Core.Validation
 			}
 
 			Int32 projectile = file.Get(FieldKeys.ProjectilePid, -1);
-			if (projectile != -1 && context.Catalog.IsLoaded(ProtoObjectType.Misc) && context.Catalog.Find(projectile) is null)
+			if (projectile != -1 && context.Catalog.IsLoaded(ProtoObjectType.Misc)
+				&& (new ProtoId(projectile).Type != ProtoObjectType.Misc || context.Catalog.Find(projectile) is null))
 			{
 				sink.Report(Severity.Warning, "ProjectileInvalid", entry, FieldKeys.ProjectilePid, new ProtoId(projectile));
 			}

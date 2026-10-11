@@ -44,13 +44,18 @@ namespace ProtoForge.Core.Formats.Frm
 
 			Int32 pixelOffset = ReadInt32(data, 10);
 			Int32 headerSize = ReadInt32(data, 14);
-			if (headerSize < InfoHeaderSize)
+			if (headerSize < InfoHeaderSize || headerSize > 1024)
 			{
 				throw new InvalidDataException("Only bitmaps with a BITMAPINFOHEADER (or newer) are supported.");
 			}
 
 			Int32 width = ReadInt32(data, 18);
 			Int32 rawHeight = ReadInt32(data, 22);
+			if (rawHeight == Int32.MinValue)
+			{
+				throw new InvalidDataException("The bitmap size is not valid.");
+			}
+
 			Int32 bitCount = ReadInt16(data, 28);
 			Int32 compression = ReadInt32(data, 30);
 			Int32 colorsUsed = ReadInt32(data, 46);
@@ -135,6 +140,28 @@ namespace ProtoForge.Core.Formats.Frm
 							bgra[target + 2] = data[sourceRow + (x * 4) + 2];
 							bgra[target + 3] = data[sourceRow + (x * 4) + 3];
 							break;
+					}
+				}
+			}
+
+			if (bitCount == 32)
+			{
+				// Many programs write 0 in the unused byte of a 32-bit bitmap: an image that is entirely "transparent" is really opaque.
+				Boolean anyAlpha = false;
+				for (Int32 i = 3; i < bgra.Length; i += 4)
+				{
+					if (bgra[i] != 0)
+					{
+						anyAlpha = true;
+						break;
+					}
+				}
+
+				if (!anyAlpha)
+				{
+					for (Int32 i = 3; i < bgra.Length; i += 4)
+					{
+						bgra[i] = 255;
 					}
 				}
 			}

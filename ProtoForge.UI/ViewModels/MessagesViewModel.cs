@@ -28,16 +28,32 @@ namespace ProtoForge.UI.ViewModels
 		[ObservableProperty]
 		private String _audio;
 
-		public MsgRow(MessagesViewModel owner, Int32 id, String audio, String text)
+		[ObservableProperty]
+		private String _description;
+
+		public MsgRow(MessagesViewModel owner, Int32 id, String audio, String text, String? description = null)
 		{
 			_owner = owner;
 			Id = id;
 			_audio = audio;
 			_text = text;
+			HasDescription = description is not null;
+			_description = description ?? String.Empty;
 			_loading = false;
 		}
 
 		public Int32 Id { get; }
+
+		/// <summary>In the prototype texts (<c>pro_*.msg</c>) the id N is the name and N + 1 the description: they share one row.</summary>
+		public Boolean HasDescription { get; }
+
+		partial void OnDescriptionChanged(String value)
+		{
+			if (!_loading && HasDescription)
+			{
+				_owner.CommitDescription(this);
+			}
+		}
 
 		partial void OnTextChanged(String value)
 		{
@@ -91,6 +107,10 @@ namespace ProtoForge.UI.ViewModels
 		[ObservableProperty]
 		private String _status = String.Empty;
 
+		/// <summary>True for the prototype texts: names and descriptions are shown side by side.</summary>
+		[ObservableProperty]
+		private Boolean _isPaired;
+
 		public MessagesViewModel(WorkspaceService workspaceService, ShellNavigator shell, IDialogService dialogs, INotifier notifier)
 		{
 			_workspaceService = workspaceService;
@@ -108,7 +128,11 @@ namespace ProtoForge.UI.ViewModels
 
 		partial void OnSelectedFileChanged(MsgFileItem? value)
 		{
-			LoadFile(value);
+			// While the list of files is only refreshed (dirty marks), the rows must stay as they are.
+			if (!_applying)
+			{
+				LoadFile(value);
+			}
 		}
 
 		partial void OnFilterTextChanged(String value)
@@ -125,7 +149,64 @@ namespace ProtoForge.UI.ViewModels
 			}
 
 			SelectedFile = item;
-			SelectedRow = (View?.SourceCollection as IEnumerable<MsgRow>)?.FirstOrDefault(r => r.Id == id);
+			SelectedRow = (View?.SourceCollection as IEnumerable<MsgRow>)?.FirstOrDefault(r => r.Id == id || (r.HasDescription && r.Id + 1 == id));
+		}
+
+		/// <summary>Called by a row after the user edited its description (the message that follows its id).</summary>
+		internal void CommitDescription(MsgRow row)
+		{
+			GameWorkspace? workspace = _workspaceService.Current;
+			if (workspace is null || _file is null || _applying)
+			{
+				return;
+			}
+
+			_applying = true;
+			try
+			{
+				String audio = _file.Find(row.Id + 1)?.Audio ?? String.Empty;
+				workspace.Undo.Execute(new MessageEditAction(_file, row.Id + 1, row.Description, audio, workspace.RefreshTexts));
+				RefreshFileList(keepSelection: true);
+			}
+			finally
+			{
+				_applying = false;
+			}
+		}
+
+		private static Boolean IsPairedFile(String name)
+		{
+			return name.StartsWith("pro_", StringComparison.OrdinalIgnoreCase);
+		}
+
+		/// <summary>The rows of a file; in a prototype file the description (id + 1) of a name (id) goes into the row of the name.</summary>
+		private List<MsgRow> BuildRows(MsgFile file, Boolean paired)
+		{
+			List<MsgEntry> entries = [.. file.Entries];
+			if (!paired)
+			{
+				return [.. entries.Select(e => new MsgRow(this, e.Id, e.Audio, e.Text))];
+			}
+
+			Dictionary<Int32, MsgEntry> byId = [];
+			foreach (MsgEntry entry in entries)
+			{
+				byId[entry.Id] = entry;
+			}
+
+			List<MsgRow> rows = [];
+			foreach (MsgEntry entry in entries)
+			{
+				if (entry.Id % 100 == 1 && byId.ContainsKey(entry.Id - 1))
+				{
+					continue;
+				}
+
+				String? description = entry.Id % 100 == 0 && byId.TryGetValue(entry.Id + 1, out MsgEntry? next) ? ProtoForge.Core.Domain.ProtoTextService.ToDisplay(next.Text) : null;
+				rows.Add(new MsgRow(this, entry.Id, entry.Audio, entry.Text, description));
+			}
+
+			return rows;
 		}
 
 		/// <summary>Called by a row after the user edited it.</summary>
@@ -179,8 +260,15 @@ namespace ProtoForge.UI.ViewModels
 			}
 
 			_applying = true;
-			workspace.Undo.Execute(new MessageEditAction(_file, id, String.Empty, String.Empty, workspace.RefreshTexts));
-			_applying = false;
+			try
+			{
+				workspace.Undo.Execute(new MessageEditAction(_file, id, String.Empty, String.Empty, workspace.RefreshTexts));
+			}
+			finally
+			{
+				_applying = false;
+			}
+
 			LoadFile(SelectedFile);
 			SelectedRow = (View?.SourceCollection as IEnumerable<MsgRow>)?.FirstOrDefault(r => r.Id == id);
 		}
@@ -205,8 +293,21 @@ namespace ProtoForge.UI.ViewModels
 			}
 
 			_applying = true;
-			workspace.Undo.Execute(new MessageRemoveAction(_file, row.Id, workspace.RefreshTexts));
-			_applying = false;
+			try
+			{
+				List<IUndoableAction> removals = [new MessageRemoveAction(_file, row.Id, workspace.RefreshTexts)];
+				if (row.HasDescription)
+				{
+					removals.Add(new MessageRemoveAction(_file, row.Id + 1, workspace.RefreshTexts));
+				}
+
+				workspace.Undo.Execute(removals.Count == 1 ? removals[0] : new CompositeAction(removals, Loc.Format("messages.deleteTitle")));
+			}
+			finally
+			{
+				_applying = false;
+			}
+
 			LoadFile(SelectedFile);
 		}
 
@@ -215,15 +316,20 @@ namespace ProtoForge.UI.ViewModels
 			DeleteMessageCommand.NotifyCanExecuteChanged();
 		}
 
+		private GameWorkspace? _current;
+
 		private void OnWorkspaceChanged(GameWorkspace? workspace)
 		{
+			Boolean same = ReferenceEquals(workspace, _current) && workspace is not null;
+			_current = workspace;
 			if (workspace is not null)
 			{
 				workspace.Undo.Changed -= OnUndoChanged;
 				workspace.Undo.Changed += OnUndoChanged;
 			}
 
-			RefreshFileList(keepSelection: false);
+			// A save raises the same notification as a new game: stay on the file that is being edited.
+			RefreshFileList(keepSelection: same);
 		}
 
 		private void OnUndoChanged(Object? sender, EventArgs e)
@@ -237,10 +343,41 @@ namespace ProtoForge.UI.ViewModels
 			{
 				if (!_applying)
 				{
-					LoadFile(SelectedFile);
+					// Edits made elsewhere (a prototype, another page) raise this too: rebuild the rows only when they really changed.
+					if (!RowsMatchFile())
+					{
+						LoadFile(SelectedFile);
+					}
+
 					RefreshFileList(keepSelection: true);
 				}
 			});
+		}
+
+		private Boolean RowsMatchFile()
+		{
+			if (_file is null || View?.SourceCollection is not IList<MsgRow> rows)
+			{
+				return false;
+			}
+
+			List<MsgRow> expected = BuildRows(_file, IsPaired);
+			if (rows.Count != expected.Count)
+			{
+				return false;
+			}
+
+			for (Int32 i = 0; i < rows.Count; i++)
+			{
+				MsgRow shown = rows[i];
+				MsgRow current = expected[i];
+				if (shown.Id != current.Id || shown.Text != current.Text || shown.Audio != current.Audio || shown.Description != current.Description)
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		private void RefreshFileList(Boolean keepSelection)
@@ -268,10 +405,21 @@ namespace ProtoForge.UI.ViewModels
 			HashSet<String> dirty = [.. workspace.Messages.DirtyFiles];
 			Files = [.. names.Order(StringComparer.OrdinalIgnoreCase).Select(n => new MsgFileItem(n, dirty.Contains(n)))];
 			_applying = true;
-			SelectedFile = previous is null
-				? Files.FirstOrDefault(f => String.Equals(f.Name, "pro_item.msg", StringComparison.OrdinalIgnoreCase)) ?? Files.FirstOrDefault()
-				: Files.FirstOrDefault(f => String.Equals(f.Name, previous, StringComparison.OrdinalIgnoreCase));
-			_applying = false;
+			try
+			{
+				SelectedFile = previous is null
+					? Files.FirstOrDefault(f => String.Equals(f.Name, "pro_item.msg", StringComparison.OrdinalIgnoreCase)) ?? Files.FirstOrDefault()
+					: Files.FirstOrDefault(f => String.Equals(f.Name, previous, StringComparison.OrdinalIgnoreCase));
+			}
+			finally
+			{
+				_applying = false;
+			}
+
+			if (previous is null)
+			{
+				LoadFile(SelectedFile);
+			}
 		}
 
 		private void LoadFile(MsgFileItem? item)
@@ -286,7 +434,8 @@ namespace ProtoForge.UI.ViewModels
 			}
 
 			_file = workspace.GetMessageFile(item.Name);
-			ObservableCollection<MsgRow> rows = new(_file.Entries.Select(e => new MsgRow(this, e.Id, e.Audio, e.Text)));
+			IsPaired = IsPairedFile(item.Name);
+			ObservableCollection<MsgRow> rows = new(BuildRows(_file, IsPaired));
 			ListCollectionView view = new(rows)
 			{
 				Filter = row =>
@@ -297,7 +446,9 @@ namespace ProtoForge.UI.ViewModels
 					}
 
 					MsgRow r = (MsgRow)row;
-					return r.Text.Contains(FilterText, StringComparison.OrdinalIgnoreCase) || r.Id.ToString(CultureInfo.InvariantCulture).Contains(FilterText, StringComparison.Ordinal);
+					return r.Text.Contains(FilterText, StringComparison.OrdinalIgnoreCase)
+						|| r.Description.Contains(FilterText, StringComparison.OrdinalIgnoreCase)
+						|| r.Id.ToString(CultureInfo.InvariantCulture).Contains(FilterText, StringComparison.Ordinal);
 				},
 			};
 			View = view;

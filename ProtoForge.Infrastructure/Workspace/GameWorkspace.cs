@@ -407,6 +407,12 @@ namespace ProtoForge.Infrastructure.Workspace
 		/// </summary>
 		public Int32 AddArt(ArtType type, String fileName, Byte[] frm)
 		{
+			if (Art.GetList(type) is null)
+			{
+				// Writing a list that has only the new name would replace the complete list of the game.
+				throw new InvalidOperationException($"The list {ArtResolver.GetListPath(type)} was not found: it cannot be extended.");
+			}
+
 			AddArtAction action = new(Files, Art, type, fileName, frm, () => ArtChanged?.Invoke(this, EventArgs.Empty));
 			Undo.Execute(action);
 			return action.Index;
@@ -420,10 +426,9 @@ namespace ProtoForge.Infrastructure.Workspace
 		{
 			_aiCatalog = null;
 			_validationContext = null;
-			if (AiPackets.Packets.Count > 0)
-			{
-				Choices.Set(ChoiceCatalog.AiPacket, AiPackets.Packets.Select(p => new ChoiceOption(p.Number, p.DisplayName)));
-			}
+			Choices.Set(ChoiceCatalog.AiPacket, AiPackets.Packets.Count > 0
+				? AiPackets.Packets.Select(p => new ChoiceOption(p.Number, p.DisplayName))
+				: [new ChoiceOption(0, "0")]);
 		}
 
 		private IReadOnlyList<String> ReadSectionNames(String path)
@@ -465,12 +470,19 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		public void RemoveAiPacket(AiFile file, String name)
 		{
-			Undo.Execute(new AiRemovePacketAction(file, name));
+			AiSection section = file.Find(name) ?? throw new InvalidOperationException($"There is no AI packet named '{name}'.");
+			Undo.Execute(new AiRemovePacketAction(file, section));
 		}
 
 		/// <summary>Opens an AI file from disk next to the game one; its changes are saved back to the same path.</summary>
 		public AiFile OpenCustomAi(String path)
 		{
+			path = Path.GetFullPath(path);
+			if (CanSave && String.Equals(path, Path.GetFullPath(Path.Combine(OutputFolder!, "data", "ai.txt")), StringComparison.OrdinalIgnoreCase))
+			{
+				throw new InvalidDataException("This file is the AI file of the output folder: edit the AI packets of the game instead.");
+			}
+
 			AiFile file = AiFile.Parse(File.ReadAllBytes(path));
 			if (file.Sections.Count == 0 || !file.Sections.Any(s => s.GetValue(AiParameters.PacketNumberKey) is not null))
 			{
@@ -606,20 +618,30 @@ namespace ProtoForge.Infrastructure.Workspace
 			for (Int32 i = 0; i < plan.Items.Count; i++)
 			{
 				SaveItem item = plan.Items[i];
-				String target = item.AbsolutePath ?? Path.Combine(plan.OutputFolder, item.VirtualPath.Replace('/', Path.DirectorySeparatorChar));
+				String? target = item.AbsolutePath ?? GamePath.ResolveInside(plan.OutputFolder, item.VirtualPath);
+				if (target is null)
+				{
+					// The path came from a LST or an archive and would leave the output folder: never write it.
+					errors.Add($"{item.VirtualPath}: the path is not allowed.");
+					progress?.Report((Double)(i + 1) / plan.Items.Count);
+					continue;
+				}
+
+				String temp = target + ".protoforge-tmp";
 				try
 				{
+					if (File.Exists(target) && (Options.BackupBeforeSave || item.Kind == SaveItemKind.DeleteOverride))
+					{
+						// A deleted override is always backed up: it is the only copy of that work.
+						backupFolder ??= CreateBackupFolder(plan.OutputFolder);
+						String backup = Path.Combine(backupFolder, item.AbsolutePath is null ? item.VirtualPath.Replace('/', Path.DirectorySeparatorChar) : Path.Combine("external", Path.GetFileName(item.AbsolutePath)));
+						Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
+						File.Copy(target, backup, overwrite: true);
+					}
+
 					if (File.Exists(target))
 					{
 						File.SetAttributes(target, FileAttributes.Normal);
-						if (Options.BackupBeforeSave || item.Kind == SaveItemKind.DeleteOverride)
-						{
-							// A deleted override is always backed up: it is the only copy of that work.
-							backupFolder ??= Path.Combine(plan.OutputFolder, ".protoforge-backup", DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture));
-							String backup = Path.Combine(backupFolder, item.AbsolutePath is null ? item.VirtualPath.Replace('/', Path.DirectorySeparatorChar) : Path.Combine("external", Path.GetFileName(item.AbsolutePath)));
-							Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
-							File.Copy(target, backup, overwrite: true);
-						}
 					}
 
 					if (item.Kind == SaveItemKind.DeleteOverride)
@@ -631,9 +653,17 @@ namespace ProtoForge.Infrastructure.Workspace
 					}
 
 					Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-					String temp = target + ".protoforge-tmp";
-					File.WriteAllBytes(temp, item.Content);
-					File.Move(temp, target, overwrite: true);
+					try
+					{
+						File.WriteAllBytes(temp, item.Content);
+						File.Move(temp, target, overwrite: true);
+					}
+					catch
+					{
+						TryDelete(temp);
+						throw;
+					}
+
 					if (item.Kind == SaveItemKind.Proto && Options.ReadOnlyAttribute)
 					{
 						File.SetAttributes(target, FileAttributes.ReadOnly);
@@ -641,7 +671,7 @@ namespace ProtoForge.Infrastructure.Workspace
 
 					written++;
 				}
-				catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+				catch (Exception ex) when (ex is not OutOfMemoryException)
 				{
 					errors.Add($"{item.VirtualPath}: {ex.Message}");
 				}
@@ -655,7 +685,7 @@ namespace ProtoForge.Infrastructure.Workspace
 				foreach (ProtoEntry entry in Catalog.All.Where(e => e.IsModified))
 				{
 					Boolean wasWritten = protoPaths.Contains(GetProtoPath(entry));
-					entry.AcceptChanges(entry.PendingOverrideRemoval && !wasWritten ? entry.SourceName : OutputSourceName);
+					entry.AcceptChanges(wasWritten ? OutputSourceName : entry.SourceName);
 					if (wasWritten)
 					{
 						entry.IsReadOnly = Options.ReadOnlyAttribute;
@@ -669,6 +699,9 @@ namespace ProtoForge.Infrastructure.Workspace
 				Files.ClearPending();
 				Art.Invalidate();
 				Undo.MarkSaved();
+
+				// The images that were just written cannot be taken back by Undo any more (the files are on disk).
+				Undo.Forget(a => a is AddArtAction);
 			}
 
 			Files.Invalidate();
@@ -677,7 +710,33 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		private static Boolean FileExistsInOutput(String output, String virtualPath)
 		{
-			return File.Exists(Path.Combine(output, virtualPath.Replace('/', Path.DirectorySeparatorChar)));
+			String? path = GamePath.ResolveInside(output, virtualPath);
+			return path is not null && File.Exists(path);
+		}
+
+		/// <summary>A backup folder that does not exist yet (two saves within the same second must not share one).</summary>
+		private static String CreateBackupFolder(String output)
+		{
+			String stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+			String folder = Path.Combine(output, ".protoforge-backup", stamp);
+			for (Int32 suffix = 2; Directory.Exists(folder); suffix++)
+			{
+				folder = Path.Combine(output, ".protoforge-backup", $"{stamp}-{suffix}");
+			}
+
+			return folder;
+		}
+
+		private static void TryDelete(String path)
+		{
+			try
+			{
+				File.Delete(path);
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				// A leftover temporary file is harmless.
+			}
 		}
 
 		#endregion

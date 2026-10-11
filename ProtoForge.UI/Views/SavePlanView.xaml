@@ -5,7 +5,7 @@
     xmlns:loc="clr-namespace:ProtoForge.UI.Services"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-	
+
     <StackPanel Width="620">
         <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
         <TextBlock
@@ -58,5 +58,5 @@
             Style="{StaticResource MutedText}"
             Text="{Binding BackupNote}" />
     </StackPanel>
-	
+
 </UserControl>

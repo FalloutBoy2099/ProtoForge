@@ -261,19 +261,19 @@
             <ItemsControl IsEnabled="{Binding IsEnabled}" ItemsSource="{Binding Flags}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel />
+                        <WrapPanel ItemHeight="24" ItemWidth="188" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <CheckBox
-                            Width="168"
                             Margin="0,0,4,0"
+                            VerticalAlignment="Center"
                             AutomationProperties.Name="{Binding Label}"
                             IsChecked="{Binding IsChecked, Mode=TwoWay}"
                             IsThreeState="False"
                             ToolTip="{Binding Tooltip}">
-                            <TextBlock Text="{Binding Label}" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
                         </CheckBox>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -402,6 +402,34 @@
                             Text="{loc:Loc stats.total}" />
                     </Grid>
                     <ItemsControl ItemsSource="{Binding StatRows}" />
+                </StackPanel>
+                <StackPanel
+                    Margin="0,0,0,10"
+                    Grid.IsSharedSizeScope="True"
+                    Visibility="{Binding IsSkillTable, Converter={StaticResource BoolToVisibility}}">
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" SharedSizeGroup="SkillLabel" />
+                            <ColumnDefinition Width="80" SharedSizeGroup="SkillStored" />
+                            <ColumnDefinition Width="60" SharedSizeGroup="SkillFormula" />
+                            <ColumnDefinition Width="50" SharedSizeGroup="SkillTotal" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Grid.Column="1"
+                            Style="{StaticResource FieldLabel}"
+                            Text="{loc:Loc stats.stored}" />
+                        <TextBlock
+                            Grid.Column="2"
+                            HorizontalAlignment="Center"
+                            Style="{StaticResource FieldLabel}"
+                            Text="{loc:Loc stats.formula}" />
+                        <TextBlock
+                            Grid.Column="3"
+                            HorizontalAlignment="Center"
+                            Style="{StaticResource FieldLabel}"
+                            Text="{loc:Loc stats.total}" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding SkillRows}" />
                 </StackPanel>
             </StackPanel>
         </ui:CardExpander>

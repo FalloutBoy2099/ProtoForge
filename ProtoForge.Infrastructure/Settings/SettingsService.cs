@@ -78,14 +78,23 @@ namespace ProtoForge.Infrastructure.Settings
 					AppSettings? loaded = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(_path), Options);
 					if (loaded is not null)
 					{
-						loaded.RecentProjects = [.. loaded.RecentProjects.Where(p => p.Layout is not null)];
+						loaded.RecentProjects = [.. (loaded.RecentProjects ?? []).Where(p => p?.Layout is not null)];
+						loaded.LoadedTypes ??= [];
 						return loaded;
 					}
 				}
 			}
-			catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+			catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or NullReferenceException)
 			{
-				// Fall through to defaults.
+				// Keep a copy of the unreadable file (the next save would replace it), then fall through to defaults.
+				try
+				{
+					File.Copy(_path, _path + ".bad", overwrite: true);
+				}
+				catch (Exception copy) when (copy is IOException or UnauthorizedAccessException)
+				{
+					// Nothing more can be done.
+				}
 			}
 
 			return new AppSettings();

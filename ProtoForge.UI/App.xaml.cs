@@ -30,6 +30,7 @@ namespace ProtoForge.UI
 
 			SettingsService settings = new();
 			Loc.Initialize(settings.Current.UiLanguage);
+			ProtoForge.Infrastructure.UserTexts.Translator = key => Loc.Has(key) ? Loc.Get(key) : null;
 
 			ServiceCollection services = new();
 			ConfigureServices(services, settings);
@@ -46,7 +47,7 @@ namespace ProtoForge.UI
 				// Restart after a language change: reopen the most recent project.
 				if (settings.Current.RecentProjects.Count > 0)
 				{
-					_ = _services.GetRequiredService<WorkspaceService>().OpenAsync(settings.Current.RecentProjects[0].Layout.Clone());
+					_ = ReportAsync(_services.GetRequiredService<WorkspaceService>().OpenAsync(settings.Current.RecentProjects[0].Layout.Clone()));
 				}
 			}
 			else if (e.Args.Length > 0)
@@ -59,6 +60,19 @@ namespace ProtoForge.UI
 				}
 
 				_ = OpenFromCommandLineAsync(e.Args[0], output);
+			}
+		}
+
+		/// <summary>Awaits a task that nobody else awaits: a failure is shown instead of vanishing.</summary>
+		private async Task ReportAsync(Task task)
+		{
+			try
+			{
+				await task;
+			}
+			catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
+			{
+				_services?.GetService<INotifier>()?.Error(Loc.Get("open.failed"), ex.Message);
 			}
 		}
 

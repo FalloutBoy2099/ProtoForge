@@ -24,7 +24,7 @@ namespace ProtoForge.Core.Formats.Audio
 		private const Int32 AmplitudeBufferSize = 0x10000;
 		private const Int32 MidOffset = 0x8000;
 		private const Int32 PcmHeaderSize = 44;
-		private const Int64 MaxPcmBytes = 1L << 28;
+		private const Int64 MaxPcmBytes = 1L << 27;
 
 		private AcmFile(Int32 channels, Int32 sampleRate, Int32 sampleCount, Byte[] pcm16)
 		{

@@ -69,6 +69,19 @@ namespace ProtoForge.UI.Services
 		/// <summary>Opens a game folder, a mod folder or a DAT archive, whichever the path is.</summary>
 		public async Task<Boolean> OpenPathAsync(String path, String? outputFolder = null)
 		{
+			try
+			{
+				return await OpenPathCoreAsync(path, outputFolder);
+			}
+			catch (Exception ex) when (ex is System.IO.IOException or System.IO.InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
+			{
+				_notifier.Error(Loc.Get("open.failed"), ex.Message);
+				return false;
+			}
+		}
+
+		private async Task<Boolean> OpenPathCoreAsync(String path, String? outputFolder)
+		{
 			switch (GameLayoutDiscovery.Classify(path))
 			{
 				case OpenTargetKind.GameFolder:
@@ -103,9 +116,9 @@ namespace ProtoForge.UI.Services
 			}
 		}
 
-		public async Task<Boolean> OpenAsync(GameLayout layout, IEnumerable<String>? messages = null)
+		public async Task<Boolean> OpenAsync(GameLayout layout, IEnumerable<String>? messages = null, Boolean confirmClose = true)
 		{
-			if (!await ConfirmCloseAsync())
+			if (confirmClose && !await ConfirmCloseAsync())
 			{
 				return false;
 			}
@@ -153,7 +166,7 @@ namespace ProtoForge.UI.Services
 			}
 
 			GameLayout layout = Current.Layout.Clone();
-			await OpenAsync(layout);
+			await OpenAsync(layout, confirmClose: false);
 		}
 
 		/// <summary>Asks what to do with unsaved changes. Returns false when the user cancels.</summary>
@@ -189,6 +202,10 @@ namespace ProtoForge.UI.Services
 				return false;
 			}
 
+			// Text boxes commit when they lose the focus: make sure the value being typed is part of what is saved.
+			System.Windows.Input.Keyboard.ClearFocus();
+
+			Boolean outputWasMissing = !workspace.Files.Layers.Any(l => l.IsOutput);
 			if (!workspace.CanSave)
 			{
 				String? folder = _dialogs.PickFolder(Loc.Get("open.chooseOutput"));
@@ -219,6 +236,7 @@ namespace ProtoForge.UI.Services
 			IsBusy = true;
 			BusyText = Loc.Get("busy.saving");
 			BusyProgress = 0;
+			Boolean reload = false;
 			try
 			{
 				Progress<Double> progress = new(p => BusyProgress = p);
@@ -228,6 +246,7 @@ namespace ProtoForge.UI.Services
 				{
 					_notifier.Success(Loc.Get("save.title"), Loc.Format("save.done", result.FilesWritten));
 					WorkspaceChanged?.Invoke(this, workspace);
+					reload = outputWasMissing;
 					return true;
 				}
 
@@ -237,6 +256,11 @@ namespace ProtoForge.UI.Services
 			finally
 			{
 				IsBusy = false;
+				if (reload)
+				{
+					// The output folder was chosen while saving: it has to become a source, or the saved files would not be seen.
+					_ = ReloadAsync();
+				}
 			}
 		}
 

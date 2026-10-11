@@ -137,7 +137,8 @@ namespace ProtoForge.UI.Services
 				new SimpleContentDialogCreateOptions
 				{
 					Title = title,
-					Content = new System.Windows.Controls.TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 520 },
+					// The three buttons share the width of the dialog: it must be wide enough for the longest label ("Discard changes").
+					Content = new System.Windows.Controls.TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Width = 660 },
 					PrimaryButtonText = primary,
 					SecondaryButtonText = secondary ?? String.Empty,
 					CloseButtonText = close,

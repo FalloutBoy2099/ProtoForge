@@ -52,7 +52,7 @@ namespace ProtoForge.Core.Formats.Ai
 			foreach (String section in ini.SectionNames)
 			{
 				IReadOnlyDictionary<String, String> values = ini.GetSection(section);
-				if (values.TryGetValue("packet_num", out String? number) && Int32.TryParse(number, out Int32 value))
+				if (values.TryGetValue("packet_num", out String? number) && Int32.TryParse(number, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out Int32 value))
 				{
 					packets.Add(new AiPacket(section, value, values));
 				}

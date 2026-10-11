@@ -216,6 +216,12 @@ namespace ProtoForge.UI.Controls
 				return;
 			}
 
+			if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt)) != 0)
+			{
+				// Ctrl+F, Ctrl+E, Ctrl+D... are commands of the window, not hexadecimal digits.
+				return;
+			}
+
 			Int32 nibble = ToNibble(e.Key);
 			if (nibble < 0 || offset < 0 || offset >= length)
 			{

@@ -1,6 +1,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:ProtoForge.UI.Controls"
     xmlns:conv="clr-namespace:ProtoForge.UI.Converters"
     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
@@ -31,15 +32,86 @@
         <Setter Property="Padding" Value="8,3" />
         <Setter Property="FontSize" Value="12" />
     </Style>
-    <Style BasedOn="{StaticResource {x:Type CheckBox}}" TargetType="CheckBox">
+    <!--  A compact square check box (the library one is wide and its box is not square)  -->
+    <Style TargetType="CheckBox">
         <Setter Property="MinHeight" Value="20" />
+        <Setter Property="MinWidth" Value="0" />
         <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="7,0,0,0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border
+                            x:Name="Box"
+                            Width="16"
+                            Height="16"
+                            VerticalAlignment="Center"
+                            Background="{DynamicResource ControlFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource ControlStrongStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="3">
+                            <TextBlock
+                                x:Name="Mark"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="11"
+                                Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                Text="&#xE73E;"
+                                Visibility="Collapsed" />
+                        </Border>
+                        <ContentPresenter
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            RecognizesAccessKey="True" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="{x:Null}">
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                            <Setter TargetName="Mark" Property="Text" Value="&#xE108;" />
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style BasedOn="{StaticResource {x:Type ui:DataGrid}}" TargetType="ui:DataGrid">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="RowHeight" Value="24" />
+        <Setter Property="MinRowHeight" Value="24" />
+        <Setter Property="AlternationCount" Value="2" />
         <Setter Property="ColumnHeaderHeight" Value="24" />
+        <!--  Every grid shares the rows, cells and headers of the library, so that nothing shifts when a row is selected  -->
+        <Setter Property="RowStyle" Value="{DynamicResource GridRow}" />
+        <Setter Property="CellStyle" Value="{DynamicResource LibraryCell}" />
+        <Setter Property="ColumnHeaderStyle" Value="{DynamicResource LibraryHeader}" />
     </Style>
     <Style BasedOn="{StaticResource {x:Type TabItem}}" TargetType="TabItem">
         <Setter Property="FontSize" Value="12" />
@@ -62,6 +134,212 @@
     <conv:EntryStatusConverter x:Key="EntryStatus" />
     <conv:EntryThumbnailConverter x:Key="EntryThumbnail" />
     <conv:EntryAttributesConverter x:Key="EntryAttributes" />
+    <conv:InverseBooleanConverter x:Key="InverseBool" />
+    <conv:NotEmptyConverter x:Key="NotEmpty" />
+
+    <!--  Scroll bars: a thumb never shorter than 50 pixels (with thousands of rows it would shrink to a dot)  -->
+    <Style x:Key="ScrollPageButton" TargetType="RepeatButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Background="Transparent" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="ScrollThumb" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border
+                        x:Name="Bar"
+                        Margin="2"
+                        Background="{DynamicResource ControlStrongFillColorDefaultBrush}"
+                        CornerRadius="4" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bar" Property="Background" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="Bar" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SlimScrollBar" TargetType="ScrollBar">
+        <Setter Property="Panel.ZIndex" Value="1000" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Width" Value="12" />
+        <Setter Property="MinWidth" Value="12" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent" SnapsToDevicePixels="True">
+                        <controls:MinThumbTrack
+                            x:Name="PART_Track"
+                            IsDirectionReversed="True"
+                            MinThumbLength="50">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageUpCommand" Style="{StaticResource ScrollPageButton}" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageDownCommand" Style="{StaticResource ScrollPageButton}" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ScrollThumb}" />
+                            </Track.Thumb>
+                        </controls:MinThumbTrack>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto" />
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="Height" Value="12" />
+                <Setter Property="MinHeight" Value="12" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="Transparent" SnapsToDevicePixels="True">
+                                <controls:MinThumbTrack
+                                    x:Name="PART_Track"
+                                    IsDirectionReversed="False"
+                                    MinThumbLength="50">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageLeftCommand" Style="{StaticResource ScrollPageButton}" />
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageRightCommand" Style="{StaticResource ScrollPageButton}" />
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource ScrollThumb}" />
+                                    </Track.Thumb>
+                                </controls:MinThumbTrack>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style BasedOn="{StaticResource SlimScrollBar}" TargetType="ScrollBar" />
+    <Style BasedOn="{StaticResource SlimScrollBar}" TargetType="ui:DynamicScrollBar" />
+
+    <Style x:Key="TitleIcon" TargetType="ui:SymbolIcon">
+        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+    </Style>
+
+    <!--  Commands of the title bar: small, flat, icon only, the same for all  -->
+    <Style x:Key="TitleCommand" TargetType="Button">
+        <Setter Property="Height" Value="28" />
+        <Setter Property="MinWidth" Value="32" />
+        <Setter Property="Margin" Value="0,0,2,0" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border
+                        x:Name="Root"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="4">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  Theme and language buttons: a glyph of Segoe Fluent Icons, like the caption buttons of the window  -->
+    <Style x:Key="TitleGlyphButton" TargetType="Button">
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  A tab of the type strip: no filled block, an accent line under the text of the selected one  -->
+    <Style x:Key="TabStripItem" TargetType="ListBoxItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="Padding" Value="7,3" />
+        <Setter Property="Margin" Value="0,0,1,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Grid>
+                        <Border
+                            x:Name="Hover"
+                            Background="Transparent"
+                            CornerRadius="4" />
+                        <ContentPresenter Margin="{TemplateBinding Padding}" />
+                        <Border
+                            x:Name="Indicator"
+                            Height="2"
+                            Margin="8,0"
+                            VerticalAlignment="Bottom"
+                            Background="{DynamicResource AccentFillColorDefaultBrush}"
+                            CornerRadius="1"
+                            Visibility="Hidden" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Hover" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <Style x:Key="FieldLabel" TargetType="TextBlock">
         <Setter Property="FontSize" Value="11" />
@@ -104,11 +382,82 @@
     </Style>
 
     <!--  Library rows: coloured by state, with a compact height so thousands of rows stay readable.  -->
+    <SolidColorBrush x:Key="RowAlternateBrush" Color="#08808080" />
+    <Style x:Key="GridRow" TargetType="DataGridRow">
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="ValidationErrorTemplate" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridRow">
+                    <!--  The selection mark is drawn over the row: it must not push the cells (the text of a selected row stays aligned)  -->
+                    <Border
+                        x:Name="Root"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="4"
+                        SnapsToDevicePixels="True">
+                        <Grid>
+                            <SelectiveScrollingGrid>
+                                <SelectiveScrollingGrid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </SelectiveScrollingGrid.ColumnDefinitions>
+                                <SelectiveScrollingGrid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </SelectiveScrollingGrid.RowDefinitions>
+                                <DataGridCellsPresenter
+                                    Grid.Column="1"
+                                    ItemsPanel="{TemplateBinding ItemsPanel}"
+                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                <DataGridDetailsPresenter
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    SelectiveScrollingGrid.SelectiveScrollingOrientation="Vertical"
+                                    Visibility="{TemplateBinding DetailsVisibility}" />
+                            </SelectiveScrollingGrid>
+                            <Rectangle
+                                x:Name="Mark"
+                                Width="3"
+                                Height="16"
+                                Margin="1,0,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Fill="{DynamicResource AccentFillColorDefaultBrush}"
+                                RadiusX="1.5"
+                                RadiusY="1.5"
+                                Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!--  A very light stripe on every other row (before the others: hover and selection win)  -->
+                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource RowAlternateBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <Style BasedOn="{StaticResource GridRow}" TargetType="DataGridRow" />
     <Style
         x:Key="LibraryRow"
-        BasedOn="{StaticResource DefaultDataGridRowStyle}"
+        BasedOn="{StaticResource GridRow}"
         TargetType="DataGridRow">
-        <Setter Property="MinHeight" Value="20" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsModified}" Value="True">
                 <Setter Property="Foreground" Value="#FCC84B" />
@@ -119,10 +468,112 @@
             <DataTrigger Binding="{Binding IsBroken}" Value="True">
                 <Setter Property="Foreground" Value="#FF6B6B" />
             </DataTrigger>
+            <!--  Last, so that it wins: the selected row is written in the accent color  -->
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+            </Trigger>
         </Style.Triggers>
     </Style>
 
+    <!--  Cells and headers of the library: the same padding on every row (a selected row must not shift its text) and left-aligned headers  -->
+    <Style x:Key="LibraryCell" TargetType="DataGridCell">
+        <Setter Property="Padding" Value="9,2" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style
+        x:Key="LibraryHeader"
+        BasedOn="{StaticResource DefaultDataGridColumnHeaderStyle}"
+        TargetType="DataGridColumnHeader">
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Padding" Value="9,0" />
+    </Style>
+
+    <Style BasedOn="{StaticResource LibraryCell}" TargetType="DataGridCell" />
+    <Style BasedOn="{StaticResource LibraryHeader}" TargetType="DataGridColumnHeader" />
+
+    <!--  Long texts (descriptions, messages) wrap and the row grows with them  -->
+    <Style x:Key="WrapCellText" TargetType="TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!--  One text size for every list: 12 px (the default of the library styles is larger)  -->
+    <Style TargetType="ListBoxItem">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="Margin" Value="0,0,0,1" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border
+                        x:Name="Root"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="4">
+                        <Grid>
+                            <ContentPresenter
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            <Rectangle
+                                x:Name="Mark"
+                                Width="3"
+                                Height="14"
+                                Margin="1,0,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Fill="{DynamicResource AccentFillColorDefaultBrush}"
+                                RadiusX="1.5"
+                                RadiusY="1.5"
+                                Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                            <Setter Property="Foreground" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type ComboBoxItem}}" TargetType="ComboBoxItem">
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type TreeViewItem}}" TargetType="TreeViewItem">
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
     <Style x:Key="CellText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>

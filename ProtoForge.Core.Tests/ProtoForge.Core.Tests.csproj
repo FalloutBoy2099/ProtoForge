@@ -6,8 +6,8 @@
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
-		<AssemblyVersion>2026.10.11.1</AssemblyVersion>
-		<FileVersion>2026.10.11.1</FileVersion>
+		<AssemblyVersion>2026.10.11.2</AssemblyVersion>
+		<FileVersion>2026.10.11.2</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

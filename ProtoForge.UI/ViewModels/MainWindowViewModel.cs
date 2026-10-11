@@ -55,6 +55,12 @@ namespace ProtoForge.UI.ViewModels
 			_workspaceService.WorkspaceChanged += (_, workspace) => OnWorkspaceChanged(workspace);
 			_workspaceService.PropertyChanged += (_, e) =>
 			{
+				if (e.PropertyName is nameof(WorkspaceService.IsBusy))
+				{
+					UndoCommand.NotifyCanExecuteChanged();
+					RedoCommand.NotifyCanExecuteChanged();
+				}
+
 				if (e.PropertyName is nameof(WorkspaceService.HasWorkspace))
 				{
 					OnPropertyChanged(nameof(HasWorkspace));
@@ -78,6 +84,39 @@ namespace ProtoForge.UI.ViewModels
 		}
 
 		public event EventHandler? FocusSearchRequested;
+
+		private const Int32 MaxSearchHistory = 12;
+
+		/// <summary>The latest searches, newest first (shown by the search box).</summary>
+		public IList<String> SearchHistory
+		{
+			get { return _settings.Current.RecentSearches; }
+		}
+
+		public void AddSearchHistory(String text)
+		{
+			text = text.Trim();
+			if (text.Length == 0)
+			{
+				return;
+			}
+
+			List<String> history = _settings.Current.RecentSearches;
+			history.RemoveAll(h => String.Equals(h, text, StringComparison.OrdinalIgnoreCase));
+			history.Insert(0, text);
+			if (history.Count > MaxSearchHistory)
+			{
+				history.RemoveRange(MaxSearchHistory, history.Count - MaxSearchHistory);
+			}
+
+			_settings.Save();
+		}
+
+		public void ClearSearchHistory()
+		{
+			_settings.Current.RecentSearches.Clear();
+			_settings.Save();
+		}
 
 		public Task<Boolean> OpenPathAsync(String path, String? outputFolder = null)
 		{
@@ -177,12 +216,12 @@ namespace ProtoForge.UI.ViewModels
 
 		private Boolean CanUndo()
 		{
-			return _workspace?.Undo.CanUndo == true;
+			return _workspace?.Undo.CanUndo == true && !_workspaceService.IsBusy;
 		}
 
 		private Boolean CanRedo()
 		{
-			return _workspace?.Undo.CanRedo == true;
+			return _workspace?.Undo.CanRedo == true && !_workspaceService.IsBusy;
 		}
 
 		[RelayCommand(CanExecute = nameof(CanUndo))]

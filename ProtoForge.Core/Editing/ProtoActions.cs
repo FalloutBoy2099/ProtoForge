@@ -279,8 +279,8 @@ namespace ProtoForge.Core.Editing
 
 			Int32 messageId = Entry.File?.MessageId ?? 0;
 			MsgFile messages = _texts.GetFile(_type);
-			_createdName = messageId > 0 && messages.Find(messageId) is null;
-			_createdDescription = messageId > 0 && messages.Find(messageId + 1) is null;
+			_previousName = messageId > 0 ? messages.Find(messageId)?.Text : null;
+			_previousDescription = messageId > 0 ? messages.Find(messageId + 1)?.Text : null;
 			_texts.Write(Entry, _name, _description);
 		}
 
@@ -291,27 +291,38 @@ namespace ProtoForge.Core.Editing
 				return;
 			}
 
-			if (!ReferenceEquals(_catalog.RemoveLast(_type), Entry))
+			IReadOnlyList<ProtoEntry> list = _catalog.GetEntries(_type);
+			if (list.Count == 0 || !ReferenceEquals(list[^1], Entry))
 			{
 				throw new InvalidOperationException("Another prototype was added after this one; undo them first.");
 			}
 
-			// Do not leave orphan texts behind in the MSG file.
-			Int32 messageId = Entry.File?.MessageId ?? 0;
-			MsgFile messages = _texts.GetFile(_type);
-			if (_createdName)
-			{
-				messages.Remove(messageId);
-			}
+			_catalog.RemoveLast(_type);
 
-			if (_createdDescription)
+			// Do not leave orphan texts behind in the MSG file, and give back the texts that this action overwrote.
+			Int32 messageId = Entry.File?.MessageId ?? 0;
+			if (messageId > 0)
 			{
-				messages.Remove(messageId + 1);
+				MsgFile messages = _texts.GetFile(_type);
+				RestoreText(messages, messageId, _previousName);
+				RestoreText(messages, messageId + 1, _previousDescription);
 			}
 		}
 
-		private Boolean _createdName;
-		private Boolean _createdDescription;
+		private String? _previousName;
+		private String? _previousDescription;
+
+		private static void RestoreText(MsgFile messages, Int32 id, String? previous)
+		{
+			if (previous is null)
+			{
+				messages.Remove(id);
+			}
+			else
+			{
+				messages.SetText(id, previous);
+			}
+		}
 	}
 
 	/// <summary>Removes the last prototype of a type from its LST.</summary>
@@ -331,10 +342,13 @@ namespace ProtoForge.Core.Editing
 
 		public void Do()
 		{
-			if (!ReferenceEquals(_catalog.RemoveLast(_entry.Type), _entry))
+			IReadOnlyList<ProtoEntry> list = _catalog.GetEntries(_entry.Type);
+			if (list.Count == 0 || !ReferenceEquals(list[^1], _entry))
 			{
 				throw new InvalidOperationException("Only the last prototype of a list can be removed.");
 			}
+
+			_catalog.RemoveLast(_entry.Type);
 		}
 
 		public void Undo()

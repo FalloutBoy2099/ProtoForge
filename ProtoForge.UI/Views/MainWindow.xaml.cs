@@ -42,11 +42,9 @@ namespace ProtoForge.UI.Views
 			shell.PairCompareRequested += (_, _) => RootNavigation.Navigate(typeof(ComparePage));
 			shell.MessageRequested += (_, _) => RootNavigation.Navigate(typeof(MessagesPage));
 			SearchBox.PreviewKeyDown += (_, e) => OnSearchKeyDown(e, shell);
-			viewModel.FocusSearchRequested += (_, _) =>
-			{
-				SearchBox.Focus();
-				SearchBox.SelectAll();
-			};
+			SearchBox.Committed += (_, text) => viewModel.AddSearchHistory(text);
+			SearchBox.HistoryCleared += (_, _) => viewModel.ClearSearchHistory();
+			viewModel.FocusSearchRequested += (_, _) => SearchBox.FocusInput();
 
 			Width = settings.Current.WindowWidth;
 			Height = settings.Current.WindowHeight;
@@ -86,6 +84,16 @@ namespace ProtoForge.UI.Views
 			}
 		}
 
+		private void OnOpenButtonClick(Object sender, RoutedEventArgs e)
+		{
+			if (OpenButton.ContextMenu is { } menu)
+			{
+				menu.PlacementTarget = OpenButton;
+				menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+				menu.IsOpen = true;
+			}
+		}
+
 		private void OnThemeButtonClick(Object sender, RoutedEventArgs e)
 		{
 			System.Windows.Controls.ContextMenu menu = CreateMenu(ThemeButton);
@@ -119,7 +127,14 @@ namespace ProtoForge.UI.Views
 
 		private static System.Windows.Controls.ContextMenu CreateMenu(UIElement target)
 		{
-			return new System.Windows.Controls.ContextMenu { PlacementTarget = target, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+			// A menu inherits the font of its target: the glyph buttons use an icon font, which must not reach the texts of the menu.
+			return new System.Windows.Controls.ContextMenu
+			{
+				PlacementTarget = target,
+				Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+				FontFamily = Window.GetWindow(target)?.FontFamily ?? System.Windows.SystemFonts.MessageFontFamily,
+				FontSize = 12,
+			};
 		}
 
 		private static System.Windows.Controls.MenuItem CreateMenuItem(String header, Boolean isCurrent)
@@ -161,6 +176,8 @@ namespace ProtoForge.UI.Views
 
 		private async void OnClosing(Object? sender, System.ComponentModel.CancelEventArgs e)
 		{
+			// A value being typed is committed when its box loses the focus: do it before looking at what is unsaved.
+			System.Windows.Input.Keyboard.ClearFocus();
 			SaveWindowState();
 			if (_closeConfirmed || !_workspace.HasWorkspace)
 			{
@@ -183,7 +200,7 @@ namespace ProtoForge.UI.Views
 
 		private async void OnDrop(Object sender, DragEventArgs e)
 		{
-			if (e.Data.GetData(DataFormats.FileDrop) is String[] { Length: > 0 } paths)
+			if (!_workspace.IsBusy && e.Data.GetData(DataFormats.FileDrop) is String[] { Length: > 0 } paths)
 			{
 				await _viewModel.OpenPathAsync(paths[0]);
 			}

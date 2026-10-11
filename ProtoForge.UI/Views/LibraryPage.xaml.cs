@@ -103,6 +103,19 @@ namespace ProtoForge.UI.Views
 			FocusList();
 		}
 
+		/// <summary>Enter adds a line break to a description, up to the two lines the game can show (new sfall versions understand them).</summary>
+		private void OnDescriptionKeyDown(Object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.Enter && sender is System.Windows.Controls.TextBox box)
+			{
+				String remaining = box.Text.Remove(box.SelectionStart, box.SelectionLength);
+				if (remaining.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Length >= ProtoTextService.MaxDescriptionLines)
+				{
+					e.Handled = true;
+				}
+			}
+		}
+
 		private void OnGridSelectionChanged(Object sender, SelectionChangedEventArgs e)
 		{
 			_viewModel.OnSelectionChanged(Grid.SelectedItems);

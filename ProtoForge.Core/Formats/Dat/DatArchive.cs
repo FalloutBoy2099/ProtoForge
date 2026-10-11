@@ -64,7 +64,7 @@ namespace ProtoForge.Core.Formats.Dat
 				Int32 treeSize = BitConverter.ToInt32(tail, 0);
 				Int32 dataSize = BitConverter.ToInt32(tail, 4);
 
-				if (dataSize == length && treeSize > 0 && treeSize < length)
+				if (dataSize == length && treeSize > 0 && treeSize <= length - 8)
 				{
 					return new DatArchive(filePath, DatFormat.Fallout2, handle, ReadDat2(handle, length, treeSize));
 				}
@@ -77,6 +77,9 @@ namespace ProtoForge.Core.Formats.Dat
 				throw;
 			}
 		}
+
+		/// <summary>Largest file accepted from an archive (the biggest files of the game are a few megabytes).</summary>
+		private const Int32 MaxEntrySize = 512 * 1024 * 1024;
 
 		public Boolean Contains(String path)
 		{
@@ -91,6 +94,11 @@ namespace ProtoForge.Core.Formats.Dat
 		/// <summary>Reads and decompresses one file.</summary>
 		public Byte[] Read(DatEntry entry)
 		{
+			if (entry.PackedSize < 0 || entry.UnpackedSize < 0 || entry.PackedSize > MaxEntrySize || entry.UnpackedSize > MaxEntrySize)
+			{
+				throw new InvalidDataException($"The DAT entry '{entry.Path}' has an invalid size.");
+			}
+
 			Byte[] packed = new Byte[entry.PackedSize];
 			Int32 total = 0;
 			while (total < packed.Length)
@@ -148,13 +156,33 @@ namespace ProtoForge.Core.Formats.Dat
 				read += count;
 			}
 
+			if (tree.Length < 4)
+			{
+				throw new InvalidDataException("The DAT directory tree is too short.");
+			}
+
 			Int32 fileCount = BitConverter.ToInt32(tree, 0);
+			if (fileCount < 0 || fileCount > (tree.Length - 4) / 17)
+			{
+				throw new InvalidDataException("The DAT directory declares more files than it can hold.");
+			}
+
 			Dictionary<String, DatEntry> entries = new(fileCount, StringComparer.Ordinal);
 			Int32 position = 4;
 			for (Int32 i = 0; i < fileCount; i++)
 			{
+				if (position + 4 > tree.Length)
+				{
+					throw new InvalidDataException("The DAT directory tree is truncated.");
+				}
+
 				Int32 nameLength = BitConverter.ToInt32(tree, position);
 				position += 4;
+				if (nameLength < 0 || nameLength > tree.Length - position - 13)
+				{
+					throw new InvalidDataException("A DAT entry has an invalid name length.");
+				}
+
 				String name = System.Text.Encoding.Latin1.GetString(tree, position, nameLength);
 				position += nameLength;
 				Boolean compressed = tree[position] != 0;
@@ -162,6 +190,11 @@ namespace ProtoForge.Core.Formats.Dat
 				Int32 packed = BitConverter.ToInt32(tree, position + 5);
 				Int32 offset = BitConverter.ToInt32(tree, position + 9);
 				position += 13;
+
+				if (unpacked < 0 || packed < 0 || offset < 0 || (Int64)offset + (compressed ? packed : unpacked) > length - 8)
+				{
+					throw new InvalidDataException($"The DAT entry '{name}' points outside the archive.");
+				}
 
 				String path = GamePath.Normalize(name);
 				entries[path] = new DatEntry(path, offset, compressed ? packed : unpacked, unpacked, compressed);

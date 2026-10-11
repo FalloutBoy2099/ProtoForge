@@ -27,6 +27,9 @@ namespace ProtoForge.Infrastructure.Settings
 
 		public List<RecentProject> RecentProjects { get; set; } = [];
 
+		/// <summary>The latest searches of the title bar, newest first.</summary>
+		public List<String> RecentSearches { get; set; } = [];
+
 		/// <summary>Game folder used as the vanilla base when opening a mod folder or a DAT archive on its own.</summary>
 		public String? BaseGameFolder { get; set; }
 

@@ -42,7 +42,16 @@ namespace ProtoForge.UI.Services
 				return false;
 			}
 
-			File.WriteAllText(path, ProtoJson.Export(entries, Producer), new UTF8Encoding(false));
+			try
+			{
+				File.WriteAllText(path, ProtoJson.Export(entries, Producer), new UTF8Encoding(false));
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				_notifier.Error(Loc.Get("export.title"), ex.Message);
+				return false;
+			}
+
 			_notifier.Success(Loc.Get("export.title"), Loc.Format("export.done", entries.Count, Path.GetFileName(path)));
 			return true;
 		}
@@ -76,10 +85,18 @@ namespace ProtoForge.UI.Services
 				Choices = _workspace.Current?.Choices,
 			};
 			IReadOnlyDictionary<ProtoKind, String> files = ProtoCsv.Export(entries, delimiter, export);
-			foreach (KeyValuePair<ProtoKind, String> file in files)
+			try
 			{
-				// UTF-8 with BOM so that spreadsheets detect accents correctly.
-				File.WriteAllText(Path.Combine(folder, file.Key + ".csv"), file.Value, new UTF8Encoding(true));
+				foreach (KeyValuePair<ProtoKind, String> file in files)
+				{
+					// UTF-8 with BOM so that spreadsheets detect accents correctly.
+					File.WriteAllText(Path.Combine(folder, file.Key + ".csv"), file.Value, new UTF8Encoding(true));
+				}
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				_notifier.Error(Loc.Get("export.title"), ex.Message);
+				return false;
 			}
 
 			_notifier.Success(Loc.Get("export.title"), Loc.Format("export.csvDone", files.Count, folder));

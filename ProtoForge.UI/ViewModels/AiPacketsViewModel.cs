@@ -210,6 +210,7 @@ namespace ProtoForge.UI.ViewModels
 		private IReadOnlyList<AiPacketItem> _packets = [];
 
 		[ObservableProperty]
+		[NotifyCanExecuteChangedFor(nameof(RemovePacketCommand))]
 		private AiPacketItem? _selected;
 
 		[ObservableProperty]
@@ -284,8 +285,18 @@ namespace ProtoForge.UI.ViewModels
 			BuildForm();
 		}
 
+		private GameWorkspace? _attached;
+
 		private void Attach(GameWorkspace? workspace)
 		{
+			Boolean same = ReferenceEquals(workspace, _attached) && workspace is not null && ReferenceEquals(ActiveFile, _subscribed);
+			_attached = workspace;
+			if (same)
+			{
+				// A save raises the same notification as a new game: keep the selection and what is being typed.
+				return;
+			}
+
 			if (_subscribed is not null)
 			{
 				_subscribed.Changed -= OnFileChanged;
@@ -315,23 +326,22 @@ namespace ProtoForge.UI.ViewModels
 
 		private void OnFileChanged(Object? sender, EventArgs e)
 		{
-			System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+			if (_committing)
 			{
-				if (_committing)
-				{
-					return;
-				}
+				return;
+			}
 
-				Boolean structureChanged = !(ActiveFile?.Sections.SequenceEqual(_all) ?? true);
-				if (structureChanged)
-				{
-					ReloadPackets(keepSelection: true);
-				}
-				else
-				{
-					RefreshValues();
-				}
-			});
+			AiFile? file = ActiveFile;
+			Boolean structureChanged = !(file?.Sections.SequenceEqual(_all) ?? true)
+				|| (file is not null && Packets.Any(p => p.Number != file.GetPacketNumber(p.Section)));
+			if (structureChanged)
+			{
+				ReloadPackets(keepSelection: true);
+			}
+			else
+			{
+				RefreshValues();
+			}
 		}
 
 		private void ReloadPackets(Boolean keepSelection)
@@ -360,6 +370,9 @@ namespace ProtoForge.UI.ViewModels
 			];
 		}
 
+		private GameWorkspace? _formWorkspace;
+		private Int32 _formCatalogCount = -1;
+
 		private void BuildForm()
 		{
 			GameWorkspace? workspace = _workspaceService.Current;
@@ -371,9 +384,20 @@ namespace ProtoForge.UI.ViewModels
 				Drugs = [];
 				Users = [];
 				RawText = String.Empty;
+				_formWorkspace = null;
 				return;
 			}
 
+			// The editors of the parameters are the same for every packet: they are built once and only their values change, so that
+			// selecting another packet does not rebuild the whole form.
+			if (Groups.Count > 0 && ReferenceEquals(workspace, _formWorkspace) && workspace.Catalog.Count == _formCatalogCount)
+			{
+				RefreshValues();
+				return;
+			}
+
+			_formWorkspace = workspace;
+			_formCatalogCount = workspace.Catalog.Count;
 			List<AiParameterGroupViewModel> groups = [];
 			foreach (String group in AiParameters.Groups)
 			{
@@ -479,7 +503,8 @@ namespace ProtoForge.UI.ViewModels
 
 			if (key == AiParameters.PacketNumberKey)
 			{
-				ApplyFilter();
+				// The list is sorted and labelled by number: rebuild it and keep this packet selected.
+				ReloadPackets(keepSelection: true);
 			}
 		}
 
@@ -625,6 +650,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 
 			workspace.AddAiPacket(file, name);
+			ReloadPackets(keepSelection: false);
 			Selected = Packets.FirstOrDefault(p => String.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
 			_notifier.Success(Loc.Get("ai.addTitle2"), Loc.Format("ai.added", name, number));
 		}

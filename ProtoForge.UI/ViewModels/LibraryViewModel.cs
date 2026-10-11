@@ -166,6 +166,7 @@ namespace ProtoForge.UI.ViewModels
 			_workspaceService.WorkspaceChanged += OnWorkspaceChanged;
 			_shell.ProtoRequested += (_, pid) => ShowProtoRequested?.Invoke(this, pid);
 			_shell.FocusListRequested += (_, _) => FocusListRequested?.Invoke(this, EventArgs.Empty);
+			_shell.TemplatesChanged += (_, _) => UpdateTemplates();
 			_shell.SelectionProvider = () => Editor?.Selection ?? [];
 			WeakReferenceMessenger.Default.Register<SearchChangedMessage>(this, (recipient, message) => ((LibraryViewModel)recipient).SearchText = message.Value);
 			FlagFilters = BuildFlagFilters();
@@ -191,12 +192,42 @@ namespace ProtoForge.UI.ViewModels
 			UpdateTemplates();
 		}
 
+		private const Int32 PrefetchBefore = 3;
+		private const Int32 PrefetchAfter = 8;
+
+		/// <summary>Warms the image cache with the rows just above and below the selection (arrow keys and wheel scrolling go that way).</summary>
+		private void PrefetchAround(IReadOnlyList<ProtoEntry> selected)
+		{
+			if (Editor is null || selected.Count != 1 || View is not System.Windows.Data.ListCollectionView list)
+			{
+				return;
+			}
+
+			Int32 index = list.IndexOf(selected[0]);
+			if (index < 0)
+			{
+				return;
+			}
+
+			List<ProtoEntry> neighbours = [];
+			for (Int32 i = Math.Max(0, index - PrefetchBefore); i <= Math.Min(list.Count - 1, index + PrefetchAfter); i++)
+			{
+				if (i != index && list.GetItemAt(i) is ProtoEntry entry)
+				{
+					neighbours.Add(entry);
+				}
+			}
+
+			Editor.Prefetch(neighbours);
+		}
+
 		/// <summary>Called by the grid whenever its selection changes.</summary>
 		public void OnSelectionChanged(IList selectedItems)
 		{
 			List<ProtoEntry> entries = [.. selectedItems.OfType<ProtoEntry>()];
 			SelectedCount = entries.Count;
 			Editor?.SetSelection(entries);
+			PrefetchAround(entries);
 			DuplicateCommand.NotifyCanExecuteChanged();
 			DeleteCommand.NotifyCanExecuteChanged();
 			CompareSelectedCommand.NotifyCanExecuteChanged();
@@ -267,6 +298,7 @@ namespace ProtoForge.UI.ViewModels
 		private void ClearFilters()
 		{
 			SearchText = String.Empty;
+			Main.SearchText = String.Empty;
 			KindFilter = null;
 			ModifiedOnly = false;
 			ErrorsOnly = false;
@@ -274,7 +306,6 @@ namespace ProtoForge.UI.ViewModels
 			SourceFilter = null;
 			FlagFilter = null;
 			SelectedTypeFilter = TypeFilters.FirstOrDefault();
-			WeakReferenceMessenger.Default.Send(new SearchChangedMessage(String.Empty));
 		}
 
 		[RelayCommand]

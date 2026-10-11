@@ -27,8 +27,10 @@
                     Text="{loc:Loc welcome.subtitle}" />
                 <UniformGrid Columns="3">
                     <ui:CardAction
-                        Height="96"
+                        MinHeight="112"
                         Margin="0,0,10,0"
+                        VerticalAlignment="Stretch"
+                        VerticalContentAlignment="Top"
                         Command="{Binding Main.OpenGameFolderCommand}">
                         <StackPanel>
                             <ui:SymbolIcon
@@ -42,12 +44,15 @@
                             <TextBlock
                                 FontSize="12"
                                 Style="{StaticResource MutedText}"
-                                Text="{loc:Loc welcome.gameHint}" />
+                                Text="{loc:Loc welcome.gameHint}"
+                                TextWrapping="Wrap" />
                         </StackPanel>
                     </ui:CardAction>
                     <ui:CardAction
-                        Height="96"
+                        MinHeight="112"
                         Margin="0,0,10,0"
+                        VerticalAlignment="Stretch"
+                        VerticalContentAlignment="Top"
                         Command="{Binding Main.OpenModFolderCommand}">
                         <StackPanel>
                             <ui:SymbolIcon
@@ -61,10 +66,15 @@
                             <TextBlock
                                 FontSize="12"
                                 Style="{StaticResource MutedText}"
-                                Text="{loc:Loc welcome.modHint}" />
+                                Text="{loc:Loc welcome.modHint}"
+                                TextWrapping="Wrap" />
                         </StackPanel>
                     </ui:CardAction>
-                    <ui:CardAction Height="96" Command="{Binding Main.OpenDatArchiveCommand}">
+                    <ui:CardAction
+                        MinHeight="112"
+                        VerticalAlignment="Stretch"
+                        VerticalContentAlignment="Top"
+                        Command="{Binding Main.OpenDatArchiveCommand}">
                         <StackPanel>
                             <ui:SymbolIcon
                                 Margin="0,0,0,10"
@@ -77,7 +87,8 @@
                             <TextBlock
                                 FontSize="12"
                                 Style="{StaticResource MutedText}"
-                                Text="{loc:Loc welcome.datHint}" />
+                                Text="{loc:Loc welcome.datHint}"
+                                TextWrapping="Wrap" />
                         </StackPanel>
                     </ui:CardAction>
                 </UniformGrid>
@@ -135,26 +146,27 @@
                     Margin="0,0,0,8"
                     Background="Transparent"
                     BorderThickness="0"
+                    ItemContainerStyle="{StaticResource TabStripItem}"
                     ItemsSource="{Binding TypeFilters}"
                     KeyboardNavigation.DirectionalNavigation="Contained"
-                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
                     SelectedItem="{Binding SelectedTypeFilter, Mode=TwoWay}">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
+                            <WrapPanel Orientation="Horizontal" />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="4,2" Orientation="Horizontal">
+                            <StackPanel Margin="0,2" Orientation="Horizontal">
                                 <TextBlock
-                                    FontSize="13"
+                                    FontSize="12"
                                     FontWeight="SemiBold"
                                     Text="{Binding Label}" />
                                 <TextBlock
-                                    Margin="6,0,0,0"
-                                    FontSize="12"
+                                    Margin="5,0,0,0"
+                                    FontSize="11"
                                     Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                     Text="{Binding Count}" />
                             </StackPanel>
@@ -298,6 +310,8 @@
                     CanUserAddRows="False"
                     CanUserDeleteRows="False"
                     CanUserResizeRows="False"
+                    CellStyle="{StaticResource LibraryCell}"
+                    ColumnHeaderStyle="{StaticResource LibraryHeader}"
                     EnableRowVirtualization="True"
                     GridLinesVisibility="None"
                     HeadersVisibility="Column"
@@ -338,7 +352,7 @@
                     </ui:DataGrid.ContextMenu>
                     <ui:DataGrid.Columns>
                         <DataGridTemplateColumn
-                            Width="30"
+                            Width="28"
                             CanUserSort="False"
                             Header="">
                             <DataGridTemplateColumn.CellTemplate>
@@ -363,7 +377,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTemplateColumn
-                            Width="36"
+                            Width="44"
                             CanUserSort="False"
                             Header="">
                             <DataGridTemplateColumn.CellTemplate>
@@ -371,6 +385,7 @@
                                     <Image
                                         Width="28"
                                         Height="20"
+                                        HorizontalAlignment="Center"
                                         RenderOptions.BitmapScalingMode="NearestNeighbor"
                                         Source="{Binding Converter={StaticResource EntryThumbnail}, IsAsync=True}"
                                         Stretch="Uniform" />
@@ -379,25 +394,25 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn
                             Width="*"
-                            MinWidth="140"
+                            MinWidth="150"
                             Binding="{Binding DisplayName}"
                             ElementStyle="{StaticResource CellText}"
                             Header="{loc:Loc col.name}"
                             SortMemberPath="Name" />
                         <DataGridTextColumn
-                            Width="110"
+                            Width="100"
                             Binding="{Binding Kind, Converter={StaticResource KindLabel}}"
                             ElementStyle="{StaticResource CellText}"
                             Header="{loc:Loc col.kind}"
                             SortMemberPath="Kind" />
                         <DataGridTextColumn
-                            Width="112"
+                            Width="124"
                             Binding="{Binding Pid, Converter={StaticResource Pid}}"
                             ElementStyle="{StaticResource CellText}"
                             Header="PID"
                             SortMemberPath="Pid" />
                         <DataGridTemplateColumn
-                            Width="104"
+                            Width="80"
                             CanUserSort="False"
                             Header="{loc:Loc col.attr}">
                             <DataGridTemplateColumn.CellTemplate>
@@ -426,7 +441,7 @@
                             ElementStyle="{StaticResource CellText}"
                             Header="{loc:Loc col.file}" />
                         <DataGridTextColumn
-                            Width="130"
+                            Width="110"
                             Binding="{Binding SourceName}"
                             ElementStyle="{StaticResource CellText}"
                             Header="{loc:Loc col.source}" />
@@ -659,13 +674,15 @@
                                             Style="{StaticResource FieldLabel}"
                                             Text="{loc:Loc field.description}" />
                                         <ui:TextBox
-                                            AcceptsReturn="False"
+                                            AcceptsReturn="True"
                                             IsEnabled="{Binding CanEditText}"
                                             MaxLines="5"
                                             MinLines="2"
                                             PlaceholderText="{loc:Loc field.descriptionPlaceholder}"
+                                            PreviewKeyDown="OnDescriptionKeyDown"
                                             Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                            TextWrapping="Wrap" />
+                                            TextWrapping="Wrap"
+                                            ToolTip="{loc:Loc field.descriptionBreakTip}" />
                                         <TextBlock
                                             Margin="0,6,0,0"
                                             FontSize="11"

@@ -77,6 +77,7 @@ namespace ProtoForge.UI.Views
 			root.Children.Add(host);
 			Content = root;
 			Owner = System.Windows.Application.Current.MainWindow;
+			Closed += (_, _) => viewModel.Dispose();
 		}
 
 		public CompareViewModel ViewModel { get; }

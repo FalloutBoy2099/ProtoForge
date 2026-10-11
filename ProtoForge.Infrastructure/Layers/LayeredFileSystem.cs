@@ -3,6 +3,7 @@ namespace ProtoForge.Infrastructure.Layers
 	using System;
 	using System.Collections.Generic;
 	using System.Linq;
+	using System.Threading;
 	using ProtoForge.Core.Formats.Dat;
 	using ProtoForge.Core.Vfs;
 	using Layout;
@@ -16,6 +17,7 @@ namespace ProtoForge.Infrastructure.Layers
 		private readonly List<GameLayer> _layers;
 		private readonly Dictionary<String, IReadOnlyList<String>> _directoryCache = new(StringComparer.Ordinal);
 		private readonly Dictionary<String, Byte[]> _overlay = new(StringComparer.Ordinal);
+		private Int32 _generation;
 
 		/// <summary>The pseudo layer of the files created in this session and not saved yet (it wins over every real layer).</summary>
 		public static readonly LayerInfo PendingLayer = new(-1, "Pending", null, false, false);
@@ -63,7 +65,7 @@ namespace ProtoForge.Infrastructure.Layers
 					}
 					else if (!definition.IsOutput)
 					{
-						warnings.Add($"Folder not found: {definition.Path}");
+						warnings.Add(UserTexts.Format("warn.folderNotFound", "Folder not found: {0}", definition.Path));
 					}
 					else
 					{
@@ -73,7 +75,7 @@ namespace ProtoForge.Infrastructure.Layers
 				}
 				catch (Exception ex) when (ex is System.IO.IOException or System.IO.InvalidDataException or UnauthorizedAccessException)
 				{
-					warnings.Add($"Cannot open '{definition.Path}': {ex.Message}");
+					warnings.Add(UserTexts.Format("warn.cannotOpen", "Cannot open '{0}': {1}", definition.Path, ex.Message));
 				}
 			}
 
@@ -220,6 +222,7 @@ namespace ProtoForge.Infrastructure.Layers
 				}
 			}
 
+			Int32 generation = Volatile.Read(ref _generation);
 			HashSet<String> files = new(StringComparer.Ordinal);
 			foreach (GameLayer layer in _layers)
 			{
@@ -240,7 +243,11 @@ namespace ProtoForge.Infrastructure.Layers
 			List<String> sorted = [.. files.Order(StringComparer.Ordinal)];
 			lock (_directoryCache)
 			{
-				_directoryCache[normalized] = sorted;
+				// A listing built while files were added or removed is already out of date: do not keep it.
+				if (generation == Volatile.Read(ref _generation))
+				{
+					_directoryCache[normalized] = sorted;
+				}
 			}
 
 			return sorted;
@@ -249,6 +256,7 @@ namespace ProtoForge.Infrastructure.Layers
 		/// <summary>Forgets cached directory listings (call after files were written).</summary>
 		public void Invalidate()
 		{
+			Interlocked.Increment(ref _generation);
 			lock (_directoryCache)
 			{
 				_directoryCache.Clear();

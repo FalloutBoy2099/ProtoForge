@@ -83,8 +83,18 @@ namespace ProtoForge.UI.ViewModels
 
 			String folder = Path.Combine(Path.GetTempPath(), "ProtoForge", "hex");
 			Directory.CreateDirectory(folder);
-			String path = Path.Combine(folder, $"{_entry.Pid.Value:X8}-{_entry.FileName}");
-			File.WriteAllBytes(path, file.ToArray());
+			String safeName = String.Concat(Path.GetFileName(_entry.FileName).Select(c => Array.IndexOf(Path.GetInvalidFileNameChars(), c) >= 0 ? '_' : c));
+			String path = Path.Combine(folder, $"{_entry.Pid.Value:X8}-{(safeName.Length == 0 ? "proto.pro" : safeName)}");
+			try
+			{
+				File.WriteAllBytes(path, file.ToArray());
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				// The copy of an earlier session may still be open in the editor.
+				_notifier.Error(Loc.Get("hex.external"), ex.Message);
+				return;
+			}
 
 			try
 			{
@@ -140,6 +150,13 @@ namespace ProtoForge.UI.ViewModels
 				}
 
 				ProtoFile? parsed = ProtoFile.TryParse(bytes, entry.Type, out String? error);
+				if (parsed is not null && (!parsed.HasExpectedLength || parsed.Kind != entry.File.Kind))
+				{
+					// A file that is half written, or of another kind, must not replace the prototype.
+					parsed = null;
+					error = Loc.Get("hex.externalWrongSize");
+				}
+
 				if (parsed is null)
 				{
 					_notifier.Warning(Loc.Get("hex.external"), Loc.Format("hex.externalInvalid", error ?? String.Empty));

@@ -25,7 +25,7 @@ namespace ProtoForge.Infrastructure.Workspace
 		public static GameWorkspace Load(GameLayout layout, WorkspaceOptions options, IProgress<LoadProgress>? progress, CancellationToken cancellationToken)
 		{
 			List<String> warnings = [];
-			progress?.Report(new LoadProgress("Opening data sources", 0));
+			progress?.Report(new LoadProgress(UserTexts.Format("busy.stage.sources", "Opening data sources"), 0));
 			LayeredFileSystem files = LayeredFileSystem.Open(layout, warnings);
 
 			try
@@ -45,18 +45,18 @@ namespace ProtoForge.Infrastructure.Workspace
 				for (Int32 t = 0; t < types.Length; t++)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
-					progress?.Report(new LoadProgress($"Reading {types[t].GetFolderName()}", 0.1 + (0.7 * t / types.Length)));
+					progress?.Report(new LoadProgress(UserTexts.Format("busy.stage.reading", "Reading {0}", UserTexts.Format("type." + types[t], types[t].GetFolderName())), 0.1 + (0.7 * t / types.Length)));
 					LoadType(files, catalog, types[t], warnings, cancellationToken);
 				}
 
-				progress?.Report(new LoadProgress("Reading texts", 0.85));
+				progress?.Report(new LoadProgress(UserTexts.Format("busy.stage.texts", "Reading texts"), 0.85));
 				ProtoTextService texts = new(messages);
 				foreach (ProtoEntry entry in catalog.All)
 				{
 					texts.Load(entry);
 				}
 
-				progress?.Report(new LoadProgress("Preparing reference data", 0.92));
+				progress?.Report(new LoadProgress(UserTexts.Format("busy.stage.reference", "Preparing reference data"), 0.92));
 				ChoiceCatalog choices = new();
 				AiFile ai = LoadAi(files);
 				ConfigureChoices(choices, messages, ai.ToCatalog());
@@ -66,7 +66,7 @@ namespace ProtoForge.Infrastructure.Workspace
 				PluginLoader loader = new();
 				ValidationEngine validation = ValidationEngine.CreateDefault(loader.LoadRules(warnings));
 
-				progress?.Report(new LoadProgress("Done", 1));
+				progress?.Report(new LoadProgress(UserTexts.Format("busy.stage.done", "Done"), 1));
 				return new GameWorkspace(layout, options, files, catalog, messages, choices, ai, scripts, palette, language, warnings, validation);
 			}
 			catch
@@ -78,6 +78,12 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		private static String ResolveLanguage(LayeredFileSystem files, String requested, List<String> warnings)
 		{
+			if (!System.Text.RegularExpressions.Regex.IsMatch(requested, "^[A-Za-z0-9_-]{1,32}$"))
+			{
+				warnings.Add(UserTexts.Format("warn.languageInvalid", "The language '{0}' is not a valid folder name; 'english' is used instead.", requested));
+				requested = "english";
+			}
+
 			if (files.Enumerate($"text/{requested}/game").Count > 0)
 			{
 				return requested;
@@ -87,12 +93,12 @@ namespace ProtoForge.Infrastructure.Workspace
 			{
 				if (files.Enumerate($"text/{candidate}/game").Count > 0)
 				{
-					warnings.Add($"No text found for language '{requested}'; '{candidate}' is used instead.");
+					warnings.Add(UserTexts.Format("warn.languageFallback", "No text found for language '{0}'; '{1}' is used instead.", requested, candidate));
 					return candidate;
 				}
 			}
 
-			warnings.Add($"No MSG files found for language '{requested}': names and descriptions will be empty.");
+			warnings.Add(UserTexts.Format("warn.languageMissing", "No MSG files found for language '{0}': names and descriptions will be empty.", requested));
 			return requested;
 		}
 
@@ -107,8 +113,8 @@ namespace ProtoForge.Infrastructure.Workspace
 			Byte[]? listBytes = files.ReadAllBytes(type.GetListPath());
 			if (listBytes is null)
 			{
-				warnings.Add($"{type.GetListPath()} was not found: {type} prototypes are not available.");
-				catalog.Load(type, new LstFile(), []);
+				// Not loading the type at all: editing an empty list would write an LST that replaces the one of the base game.
+				warnings.Add(UserTexts.Format("warn.listMissing", "{0} was not found: {1} prototypes are not available.", type.GetListPath(), UserTexts.Format("type." + type, type.ToString())));
 				return;
 			}
 
@@ -129,6 +135,12 @@ namespace ProtoForge.Infrastructure.Workspace
 			}
 
 			String path = $"{type.GetProtoDirectory()}/{fileName}";
+			if (!GamePath.IsSafe(path))
+			{
+				// A name such as ..\..\x.pro would reach outside the prototype folder when the file is saved or read.
+				return new ProtoEntry(pid, fileName, null, "The file name is not allowed (it leaves the prototype folder).", String.Empty);
+			}
+
 			GameFileLocation? location = files.Locate(path);
 			if (location is null)
 			{

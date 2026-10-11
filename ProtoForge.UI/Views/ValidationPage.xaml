@@ -7,7 +7,7 @@
     Title="Validation"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="False">
-	
+
     <Grid Margin="12,4,12,8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -64,39 +64,60 @@
                         Margin="0,0,6,0"
                         Padding="10,4"
                         IsChecked="{Binding ShowErrors, Mode=TwoWay}">
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                             <ui:SymbolIcon
                                 Margin="0,0,6,0"
+                                VerticalAlignment="Center"
                                 Foreground="#E84C4C"
                                 Symbol="ErrorCircle24" />
-                            <TextBlock FontWeight="SemiBold" Text="{Binding ErrorCount}" />
-                            <TextBlock Margin="6,0,0,0" Text="{loc:Loc validation.errors}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontWeight="SemiBold"
+                                Text="{Binding ErrorCount}" />
+                            <TextBlock
+                                Margin="6,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{loc:Loc validation.errors}" />
                         </StackPanel>
                     </ToggleButton>
                     <ToggleButton
                         Margin="0,0,6,0"
                         Padding="10,4"
                         IsChecked="{Binding ShowWarnings, Mode=TwoWay}">
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                             <ui:SymbolIcon
                                 Margin="0,0,6,0"
+                                VerticalAlignment="Center"
                                 Foreground="#F0A830"
                                 Symbol="Warning24" />
-                            <TextBlock FontWeight="SemiBold" Text="{Binding WarningCount}" />
-                            <TextBlock Margin="6,0,0,0" Text="{loc:Loc validation.warnings}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontWeight="SemiBold"
+                                Text="{Binding WarningCount}" />
+                            <TextBlock
+                                Margin="6,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{loc:Loc validation.warnings}" />
                         </StackPanel>
                     </ToggleButton>
                     <ToggleButton
                         Margin="0,0,12,0"
                         Padding="10,4"
                         IsChecked="{Binding ShowInfo, Mode=TwoWay}">
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                             <ui:SymbolIcon
                                 Margin="0,0,6,0"
+                                VerticalAlignment="Center"
                                 Foreground="#5BA7E8"
                                 Symbol="Info24" />
-                            <TextBlock FontWeight="SemiBold" Text="{Binding InfoCount}" />
-                            <TextBlock Margin="6,0,0,0" Text="{loc:Loc validation.infos}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontWeight="SemiBold"
+                                Text="{Binding InfoCount}" />
+                            <TextBlock
+                                Margin="6,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{loc:Loc validation.infos}" />
                         </StackPanel>
                     </ToggleButton>
                 </StackPanel>
@@ -117,6 +138,7 @@
             IsReadOnly="True"
             ItemsSource="{Binding View}"
             MouseDoubleClick="OnRowDoubleClick"
+            RowHeight="NaN"
             SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
             SelectionMode="Single"
             VirtualizingPanel.IsVirtualizing="True"
@@ -151,6 +173,7 @@
                 <DataGridTextColumn
                     Width="*"
                     Binding="{Binding Message}"
+                    ElementStyle="{StaticResource WrapCellText}"
                     Header="{loc:Loc validation.message}" />
                 <DataGridTextColumn
                     Width="110"
@@ -160,5 +183,5 @@
             </ui:DataGrid.Columns>
         </ui:DataGrid>
     </Grid>
-	
+
 </Page>

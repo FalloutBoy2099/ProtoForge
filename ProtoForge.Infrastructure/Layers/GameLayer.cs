@@ -53,9 +53,9 @@ namespace ProtoForge.Infrastructure.Layers
 
 		public override Boolean TryGetSize(String path, out Int64 size)
 		{
-			String physical = ToPhysical(path);
-			FileInfo file = new(physical);
-			if (file.Exists)
+			String? physical = ToPhysical(path);
+			FileInfo? file = physical is null ? null : new FileInfo(physical);
+			if (file is { Exists: true })
 			{
 				size = file.Length;
 				return true;
@@ -69,8 +69,8 @@ namespace ProtoForge.Infrastructure.Layers
 		{
 			try
 			{
-				FileInfo file = new(ToPhysical(path));
-				return file.Exists && file.IsReadOnly;
+				String? physical = ToPhysical(path);
+				return physical is not null && new FileInfo(physical) is { Exists: true, IsReadOnly: true };
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{
@@ -80,7 +80,12 @@ namespace ProtoForge.Infrastructure.Layers
 
 		public override Byte[]? Read(String path)
 		{
-			String physical = ToPhysical(path);
+			String? physical = ToPhysical(path);
+			if (physical is null)
+			{
+				return null;
+			}
+
 			try
 			{
 				using FileStream stream = new(physical, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
@@ -96,18 +101,21 @@ namespace ProtoForge.Infrastructure.Layers
 
 		public override IReadOnlyList<String> Enumerate(String directory)
 		{
-			String physical = ToPhysical(directory);
-			if (!Directory.Exists(physical))
+			String? physical = ToPhysical(directory);
+			if (physical is null || !Directory.Exists(physical))
 			{
 				return [];
 			}
 
-			return [.. Directory.EnumerateFiles(physical).Select(f => GamePath.Combine(directory, Path.GetFileName(f)))];
+			return [.. Directory.EnumerateFiles(physical)
+				.Where(f => !f.EndsWith(".protoforge-tmp", StringComparison.OrdinalIgnoreCase))
+				.Select(f => GamePath.Combine(directory, Path.GetFileName(f)))];
 		}
 
-		private String ToPhysical(String virtualPath)
+		/// <summary>The path on disk, or null when the virtual path is not safe (an LST line or DAT entry must not reach outside the folder).</summary>
+		private String? ToPhysical(String virtualPath)
 		{
-			return Path.Combine(_root, virtualPath.Replace('/', Path.DirectorySeparatorChar));
+			return virtualPath.Length == 0 ? _root : GamePath.ResolveInside(_root, virtualPath);
 		}
 	}
 
@@ -137,7 +145,15 @@ namespace ProtoForge.Infrastructure.Layers
 
 		public override Byte[]? Read(String path)
 		{
-			return _archive.Read(path);
+			try
+			{
+				return _archive.Read(path);
+			}
+			catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or IOException)
+			{
+				// A damaged entry is reported as unreadable by the caller instead of failing the whole load.
+				return null;
+			}
 		}
 
 		public override IReadOnlyList<String> Enumerate(String directory)

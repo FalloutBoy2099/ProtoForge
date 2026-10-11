@@ -48,9 +48,13 @@ namespace ProtoForge.UI.ViewModels
 			get { return Loc.Get("layer.role." + Definition.Role); }
 		}
 
+		/// <summary>Called when the user ticks or unticks the layer (so that the "apply" button appears).</summary>
+		public Action? Changed { get; set; }
+
 		partial void OnIsEnabledChanged(Boolean value)
 		{
 			Definition.IsEnabled = value;
+			Changed?.Invoke();
 		}
 	}
 
@@ -365,7 +369,7 @@ namespace ProtoForge.UI.ViewModels
 
 		private void AddLayer(LayerDefinition definition)
 		{
-			Layers.Insert(0, new LayerItemViewModel(definition));
+			Layers.Insert(0, new LayerItemViewModel(definition) { Changed = MarkLayoutDirty });
 			LayoutDirty = true;
 		}
 
@@ -393,13 +397,30 @@ namespace ProtoForge.UI.ViewModels
 			LayoutDirty = LayoutDirty || !_loading;
 		}
 
+		private void MarkLayoutDirty()
+		{
+			if (!_loading)
+			{
+				LayoutDirty = true;
+			}
+		}
+
+		private GameWorkspace? _layoutWorkspace;
+
 		private void LoadLayout(GameWorkspace? workspace)
 		{
+			if (ReferenceEquals(workspace, _layoutWorkspace) && workspace is not null && LayoutDirty)
+			{
+				// Saving raises the same notification as opening a game: unapplied edits of the sources must survive it.
+				return;
+			}
+
+			_layoutWorkspace = workspace;
 			_loading = true;
 			try
 			{
 				HasWorkspace = workspace is not null;
-				Layers = workspace is null ? [] : new ObservableCollection<LayerItemViewModel>(workspace.Layout.Layers.Select(l => new LayerItemViewModel(l.Clone())));
+				Layers = workspace is null ? [] : new ObservableCollection<LayerItemViewModel>(workspace.Layout.Layers.Select(l => new LayerItemViewModel(l.Clone()) { Changed = MarkLayoutDirty }));
 				OutputFolder = workspace?.Layout.OutputFolder ?? String.Empty;
 				GameLanguage = workspace?.Layout.Language ?? String.Empty;
 				LayoutDirty = false;

@@ -7,7 +7,7 @@
     Title="Tools"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="False">
-	
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel
             MaxWidth="980"
@@ -217,7 +217,7 @@
                             Margin="8,0,0,0"
                             Command="{Binding ExtractArtCommand}"
                             Content="{loc:Loc art.extractButton}"
-                            IsEnabled="{Binding IsExtracting, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                            IsEnabled="{Binding IsExtracting, Converter={StaticResource InverseBool}}">
                             <ui:Button.Icon>
                                 <ui:SymbolIcon Symbol="FolderArrowUp24" />
                             </ui:Button.Icon>
@@ -304,5 +304,5 @@
             </Border>
         </StackPanel>
     </ScrollViewer>
-	
+
 </Page>

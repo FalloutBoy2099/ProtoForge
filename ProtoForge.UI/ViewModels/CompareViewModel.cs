@@ -107,7 +107,7 @@ namespace ProtoForge.UI.ViewModels
 	/// <summary>
 	/// Side-by-side comparison of two prototypes, or of the same prototype before/after an edit or against the original game.
 	/// </summary>
-	public sealed partial class CompareViewModel : ObservableObject
+	public sealed partial class CompareViewModel : ObservableObject, IDisposable
 	{
 		private readonly WorkspaceService _workspaceService;
 		private readonly ArtImageService _art;
@@ -141,20 +141,34 @@ namespace ProtoForge.UI.ViewModels
 			Right = new CompareSideViewModel(Versions[0]);
 			Left.PropertyChanged += OnSideChanged;
 			Right.PropertyChanged += OnSideChanged;
-			_workspaceService.WorkspaceChanged += (_, workspace) =>
+			_onWorkspaceChanged = (_, workspace) =>
 			{
 				Entries = workspace is null ? [] : [.. workspace.Catalog.All];
-				if (workspace is null)
+				if (workspace is null || !ReferenceEquals(workspace, _lastWorkspace))
 				{
+					// Another game: the prototypes of the old one must not stay on the two sides.
 					Left.Entry = null;
 					Right.Entry = null;
 				}
-				else
+
+				_lastWorkspace = workspace;
+				if (workspace is not null)
 				{
 					Rebuild();
 				}
 			};
+			_workspaceService.WorkspaceChanged += _onWorkspaceChanged;
+			_lastWorkspace = _workspaceService.Current;
 			Entries = _workspaceService.Current is { } current ? [.. current.Catalog.All] : [];
+		}
+
+		private readonly EventHandler<GameWorkspace?> _onWorkspaceChanged;
+		private GameWorkspace? _lastWorkspace;
+
+		/// <summary>Stops listening to the workspace (a closed compare window must not keep rebuilding itself).</summary>
+		public void Dispose()
+		{
+			_workspaceService.WorkspaceChanged -= _onWorkspaceChanged;
 		}
 
 		public IReadOnlyList<VersionOption> Versions { get; }

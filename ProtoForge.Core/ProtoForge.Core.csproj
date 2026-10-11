@@ -7,8 +7,8 @@
 		<RootNamespace>ProtoForge.Core</RootNamespace>
 		<AssemblyName>ProtoForge.Core</AssemblyName>
 		<Description>ProtoForge core: binary formats (PRO, DAT, LST, MSG, FRM), domain model, validation and editing services.</Description>
-		<AssemblyVersion>2026.10.11.1</AssemblyVersion>
-		<FileVersion>2026.10.11.1</FileVersion>
+		<AssemblyVersion>2026.10.11.2</AssemblyVersion>
+		<FileVersion>2026.10.11.2</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

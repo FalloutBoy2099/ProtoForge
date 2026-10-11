@@ -8,13 +8,17 @@ namespace ProtoForge.Core.Formats.Ai
 	/// <summary>One <c>[Name]</c> block of an AI file with its raw lines (everything after the header, comments and blank lines included).</summary>
 	public sealed class AiSection
 	{
-		public AiSection(String name, IEnumerable<String> lines)
+		public AiSection(String name, IEnumerable<String> lines, String? header = null)
 		{
 			Name = name;
 			Lines = [.. lines];
+			Header = header;
 		}
 
 		public String Name { get; }
+
+		/// <summary>The header line exactly as it was in the file (comments included); null for a new section.</summary>
+		public String? Header { get; }
 
 		public List<String> Lines { get; }
 
@@ -65,7 +69,9 @@ namespace ProtoForge.Core.Formats.Ai
 			}
 
 			key = trimmed[..equals].Trim();
-			value = trimmed[(equals + 1)..].Trim();
+			value = trimmed[(equals + 1)..];
+			Int32 comment = value.IndexOf(';', StringComparison.Ordinal);
+			value = (comment >= 0 ? value[..comment] : value).Trim();
 			return true;
 		}
 	}
@@ -117,7 +123,7 @@ namespace ProtoForge.Core.Formats.Ai
 				if (trimmed.StartsWith('[') && trimmed.Contains(']', StringComparison.Ordinal))
 				{
 					Int32 close = trimmed.IndexOf(']', StringComparison.Ordinal);
-					current = new AiSection(trimmed[1..close].Trim(), []);
+					current = new AiSection(trimmed[1..close].Trim(), [], line);
 					file._sections.Add(current);
 				}
 				else if (current is null)
@@ -197,11 +203,13 @@ namespace ProtoForge.Core.Formats.Ai
 			}
 
 			Int32 index = -1;
+			List<Int32> all = [];
 			for (Int32 i = 0; i < target.Lines.Count; i++)
 			{
 				if (AiSection.TryParseLine(target.Lines[i], out String lineKey, out _) && String.Equals(lineKey, key, StringComparison.OrdinalIgnoreCase))
 				{
 					index = i;
+					all.Add(i);
 				}
 			}
 
@@ -212,7 +220,11 @@ namespace ProtoForge.Core.Formats.Ai
 					return false;
 				}
 
-				target.Lines.RemoveAt(index);
+				// Every copy goes: an earlier duplicate would otherwise become the value of the key again.
+				for (Int32 i = all.Count - 1; i >= 0; i--)
+				{
+					target.Lines.RemoveAt(all[i]);
+				}
 			}
 			else if (index >= 0)
 			{
@@ -276,6 +288,19 @@ namespace ProtoForge.Core.Formats.Ai
 		{
 			_sections.Insert(Math.Clamp(index, 0, _sections.Count), section);
 			Touch();
+		}
+
+		/// <summary>Removes this very section (not another one with the same name); returns its former position or -1.</summary>
+		public Int32 RemoveSection(AiSection section)
+		{
+			Int32 index = _sections.IndexOf(section);
+			if (index >= 0)
+			{
+				_sections.RemoveAt(index);
+				Touch();
+			}
+
+			return index;
 		}
 
 		/// <summary>Removes a section and returns it with its former position (for undo), or null when it does not exist.</summary>
@@ -348,7 +373,7 @@ namespace ProtoForge.Core.Formats.Ai
 			List<String> lines = [.. _preamble];
 			foreach (AiSection section in _sections)
 			{
-				lines.Add("[" + section.Name + "]");
+				lines.Add(section.Header ?? "[" + section.Name + "]");
 				lines.AddRange(section.Lines);
 			}
 

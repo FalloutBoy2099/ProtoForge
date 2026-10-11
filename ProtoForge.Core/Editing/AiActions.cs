@@ -72,15 +72,19 @@ namespace ProtoForge.Core.Editing
 		public void Do()
 		{
 			_previousLineCount = _file.LastSectionLineCount;
-			_file.AddSection(_name, _lines);
+			_added = _file.AddSection(_name, _lines);
 		}
 
 		public void Undo()
 		{
-			_file.RemoveSection(_name);
-			_file.TruncateLastSection(_previousLineCount);
+			if (_added is not null)
+			{
+				_file.RemoveSection(_added);
+				_file.TruncateLastSection(_previousLineCount);
+			}
 		}
 
+		private AiSection? _added;
 		private Int32 _previousLineCount;
 	}
 
@@ -88,33 +92,28 @@ namespace ProtoForge.Core.Editing
 	public sealed class AiRemovePacketAction : IUndoableAction
 	{
 		private readonly AiFile _file;
-		private readonly String _name;
-		private AiSection? _removed;
-		private Int32 _index;
+		private readonly AiSection _section;
+		private Int32 _index = -1;
 
-		public AiRemovePacketAction(AiFile file, String name)
+		public AiRemovePacketAction(AiFile file, AiSection section)
 		{
 			_file = file;
-			_name = name;
-			Description = $"Delete AI packet {name}";
+			_section = section;
+			Description = $"Delete AI packet {section.Name}";
 		}
 
 		public String Description { get; }
 
 		public void Do()
 		{
-			if (_file.RemoveSection(_name) is { } result)
-			{
-				_removed = result.Section;
-				_index = result.Index;
-			}
+			_index = _file.RemoveSection(_section);
 		}
 
 		public void Undo()
 		{
-			if (_removed is not null)
+			if (_index >= 0)
 			{
-				_file.InsertSection(_index, _removed);
+				_file.InsertSection(_index, _section);
 			}
 		}
 	}

@@ -7,7 +7,7 @@
     Title="Messages"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ScrollViewer.CanContentScroll="False">
-	
+
     <Grid Margin="12,4,12,8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="230" />
@@ -70,6 +70,7 @@
                 GridLinesVisibility="None"
                 HeadersVisibility="Column"
                 ItemsSource="{Binding View}"
+                RowHeight="NaN"
                 SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
                 SelectionMode="Single"
                 VirtualizingPanel.IsVirtualizing="True"
@@ -78,22 +79,36 @@
                     <DataGridTextColumn
                         Width="80"
                         Binding="{Binding Id}"
+                        ElementStyle="{StaticResource CellText}"
                         Header="ID"
                         IsReadOnly="True" />
                     <DataGridTextColumn
                         Width="120"
                         Binding="{Binding Audio, UpdateSourceTrigger=LostFocus}"
+                        ElementStyle="{StaticResource CellText}"
                         Header="{loc:Loc messages.audio}" />
                     <DataGridTextColumn
+                        x:Name="TextColumn"
                         Width="*"
                         Binding="{Binding Text, UpdateSourceTrigger=LostFocus}"
                         Header="{loc:Loc messages.text}">
                         <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="TextWrapping" Value="Wrap" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                            </Style>
+                            <StaticResource ResourceKey="WrapCellText" />
                         </DataGridTextColumn.ElementStyle>
+                        <DataGridTextColumn.EditingElementStyle>
+                            <Style BasedOn="{StaticResource {x:Type TextBox}}" TargetType="TextBox">
+                                <Setter Property="TextWrapping" Value="Wrap" />
+                                <Setter Property="AcceptsReturn" Value="False" />
+                            </Style>
+                        </DataGridTextColumn.EditingElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn
+                        x:Name="DescriptionColumn"
+                        Width="2*"
+                        Binding="{Binding Description, UpdateSourceTrigger=LostFocus}"
+                        ElementStyle="{StaticResource WrapCellText}"
+                        Header="{loc:Loc field.description}"
+                        Visibility="Collapsed">
                         <DataGridTextColumn.EditingElementStyle>
                             <Style BasedOn="{StaticResource {x:Type TextBox}}" TargetType="TextBox">
                                 <Setter Property="TextWrapping" Value="Wrap" />
@@ -112,5 +127,5 @@
                 Text="{Binding Status}" />
         </Grid>
     </Grid>
-	
+
 </Page>

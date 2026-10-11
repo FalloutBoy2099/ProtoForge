@@ -98,6 +98,18 @@ namespace ProtoForge.Infrastructure.Layout
 				result.Add(copy);
 			}
 
+			if (outputPresent)
+			{
+				// What you save must be what you see: the output folder wins over every other source.
+				Int32 index = result.FindIndex(l => l.IsOutput);
+				if (index > 0)
+				{
+					LayerDefinition moved = result[index];
+					result.RemoveAt(index);
+					result.Insert(0, moved);
+				}
+			}
+
 			if (output is not null && !outputPresent)
 			{
 				result.Insert(0, new LayerDefinition

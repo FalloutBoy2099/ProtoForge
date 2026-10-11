@@ -47,6 +47,59 @@ namespace ProtoForge.Core.Tests.Integration
 		}
 
 		[SkippableFact]
+		public void Dat1_EveryEntryOfBothArchivesDecodesToItsDeclaredSize()
+		{
+			String? folder = TestEnvironment.Fallout1Folder;
+			Skip.If(folder is null, "No Fallout 1 installation found.");
+
+			foreach (String name in new[] { "MASTER.DAT", "CRITTER.DAT" })
+			{
+				using DatArchive archive = DatArchive.Open(Path.Combine(folder!, name));
+				Assert.Equal(DatFormat.Fallout1, archive.Format);
+				Int32 compressed = 0;
+				foreach (DatEntry entry in archive.Entries)
+				{
+					Byte[] data = archive.Read(entry);
+					Assert.True(entry.UnpackedSize == data.Length, $"{name}: {entry.Path} decoded to {data.Length} bytes instead of {entry.UnpackedSize}.");
+					compressed += entry.IsCompressed ? 1 : 0;
+				}
+
+				_output.WriteLine($"{name}: {archive.Count} files, {compressed} compressed, all decoded.");
+			}
+		}
+
+		[SkippableFact]
+		public async System.Threading.Tasks.Task Fallout1_Workspace_LoadsAndValidates()
+		{
+			String? folder = TestEnvironment.Fallout1Folder;
+			Skip.If(folder is null, "No Fallout 1 installation found.");
+
+			DiscoveryResult discovery = GameLayoutDiscovery.FromGameFolder(folder!);
+			foreach (String message in discovery.Messages)
+			{
+				_output.WriteLine("discovery: " + message);
+			}
+
+			using GameWorkspace workspace = await GameWorkspace.OpenAsync(discovery.Layout, new WorkspaceOptions());
+			foreach (String warning in workspace.Warnings)
+			{
+				_output.WriteLine("warning: " + warning);
+			}
+
+			_output.WriteLine($"Loaded {workspace.Catalog.Count} prototypes ({workspace.Files.Layers.Count} layers).");
+			Assert.True(workspace.Files.HasFallout1Archive);
+			Assert.True(workspace.Catalog.GetEntries(ProtoObjectType.Item).Count > 100);
+			Assert.True(workspace.Catalog.GetEntries(ProtoObjectType.Critter).Count > 50);
+			Assert.DoesNotContain(workspace.Catalog.All, e => e.LoadError is not null);
+			IReadOnlyList<ValidationIssue> issues = workspace.Validate();
+			_output.WriteLine($"{issues.Count} validation issues.");
+			foreach (IGrouping<String, ValidationIssue> group in issues.GroupBy(i => i.Severity + " " + i.RuleId + " " + i.Code).OrderByDescending(g => g.Count()).Take(12))
+			{
+				_output.WriteLine($"{group.Count(),5}  {group.Key}  e.g. {group.First().Message}");
+			}
+		}
+
+		[SkippableFact]
 		public void Dat1_ReadsFallout1Archive()
 		{
 			String? path = TestEnvironment.Fallout1MasterDat;
