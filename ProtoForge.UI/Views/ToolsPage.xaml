@@ -1,0 +1,308 @@
+<Page
+    x:Class="ProtoForge.UI.Views.ToolsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Tools"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False">
+	
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel
+            MaxWidth="980"
+            Margin="16,4,16,16"
+            HorizontalAlignment="Left">
+            <TextBlock
+                Margin="0,0,0,16"
+                Style="{StaticResource PageTitle}"
+                Text="{loc:Loc tools.title}" />
+
+            <!--  Export / import  -->
+            <Border
+                Margin="0,0,0,12"
+                IsEnabled="{Binding Workspace.HasWorkspace}"
+                Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc tools.exchange}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc tools.exchangeHint}" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Center"
+                            Text="{loc:Loc tools.scope}" />
+                        <ComboBox
+                            Width="220"
+                            ItemsSource="{Binding Scopes}"
+                            SelectedItem="{Binding SelectedScope, Mode=TwoWay}" />
+                        <ui:Button
+                            Margin="14,0,6,0"
+                            Command="{Binding ExportJsonCommand}"
+                            Content="{loc:Loc tools.exportJson}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowExport24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="0,0,14,0"
+                            Command="{Binding ExportCsvCommand}"
+                            Content="{loc:Loc tools.exportCsv}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Table24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Appearance="Primary"
+                            Command="{Binding ImportCommand}"
+                            Content="{loc:Loc tools.import}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowImport24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Mass creation  -->
+            <Border
+                Margin="0,0,0,12"
+                IsEnabled="{Binding Workspace.HasWorkspace}"
+                Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc tools.mass}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc tools.massHint}" />
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.massTarget}" />
+                            <ComboBox
+                                Width="220"
+                                AutomationProperties.Name="{loc:Loc tools.massTarget}"
+                                SelectedIndex="{Binding MassTargetIndex, Mode=TwoWay}">
+                                <ComboBoxItem Content="{loc:Loc tools.massTargetGame}" />
+                                <ComboBoxItem Content="{loc:Loc tools.massTargetFolder}" />
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8" Visibility="{Binding IsFolderMode, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.massStart}" />
+                            <ui:NumberBox
+                                Width="160"
+                                MaxDecimalPlaces="0"
+                                Maximum="99999999"
+                                Minimum="1"
+                                SpinButtonPlacementMode="Hidden"
+                                Value="{Binding MassStartNumber, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.massKind}" />
+                            <ComboBox Width="160" SelectedIndex="{Binding MassKindIndex, Mode=TwoWay}">
+                                <ComboBoxItem Content="{loc:Loc type.Wall}" />
+                                <ComboBoxItem Content="{loc:Loc type.Tile}" />
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.massArt}" />
+                            <ui:NumberBox
+                                Width="160"
+                                MaxDecimalPlaces="0"
+                                Maximum="4095"
+                                Minimum="0"
+                                SpinButtonPlacementMode="Hidden"
+                                Value="{Binding MassArtIndex, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.massCount}" />
+                            <ui:NumberBox
+                                Width="160"
+                                MaxDecimalPlaces="0"
+                                Maximum="5000"
+                                Minimum="1"
+                                SpinButtonPlacementMode="Hidden"
+                                Value="{Binding MassCount, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc field.Material}" />
+                            <ComboBox
+                                Width="160"
+                                DisplayMemberPath="Label"
+                                ItemsSource="{Binding Materials}"
+                                SelectedValue="{Binding MassMaterial, Mode=TwoWay}"
+                                SelectedValuePath="Value" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <CheckBox
+                        Margin="0,0,0,8"
+                        Content="{loc:Loc tools.massEnd}"
+                        IsChecked="{Binding MassEndOfGroup, Mode=TwoWay}"
+                        ToolTip="{loc:Loc tools.massEndTip}"
+                        Visibility="{Binding IsTileMode, Converter={StaticResource BoolToVisibility}}" />
+                    <ui:Button
+                        HorizontalAlignment="Left"
+                        Appearance="Primary"
+                        Command="{Binding MassCreateCommand}"
+                        Content="{loc:Loc tools.massCreate}">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Add24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </StackPanel>
+            </Border>
+
+            <!--  Art tools  -->
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc art.title}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc art.hint}"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc art.convert}" />
+                    <StackPanel Margin="0,0,0,14" Orientation="Horizontal">
+                        <ui:Button
+                            Command="{Binding ConvertBmpToFrmCommand}"
+                            Content="{loc:Loc art.convertButton}"
+                            ToolTip="{loc:Loc art.convertTip}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Image24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc art.add}" />
+                    <StackPanel
+                        Margin="0,0,0,14"
+                        IsEnabled="{Binding Workspace.HasWorkspace}"
+                        Orientation="Horizontal">
+                        <ComboBox
+                            Width="260"
+                            AutomationProperties.Name="{loc:Loc art.add}"
+                            ItemsSource="{Binding AddArtKinds}"
+                            SelectedItem="{Binding SelectedAddArtKind, Mode=TwoWay}" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Appearance="Primary"
+                            Command="{Binding AddArtCommand}"
+                            Content="{loc:Loc art.addButton}"
+                            ToolTip="{loc:Loc art.addTip}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ImageAdd24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc art.extract}" />
+                    <StackPanel IsEnabled="{Binding Workspace.HasWorkspace}" Orientation="Horizontal">
+                        <ComboBox
+                            Width="260"
+                            AutomationProperties.Name="{loc:Loc art.extract}"
+                            ItemsSource="{Binding ExtractKinds}"
+                            SelectedItem="{Binding SelectedExtractKind, Mode=TwoWay}" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Command="{Binding ExtractArtCommand}"
+                            Content="{loc:Loc art.extractButton}"
+                            IsEnabled="{Binding IsExtracting, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="FolderArrowUp24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Command="{Binding CancelExtractCommand}"
+                            Content="{loc:Loc common.cancel}"
+                            Visibility="{Binding IsExtracting, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                    <StackPanel Margin="0,8,0,0" Visibility="{Binding IsExtracting, Converter={StaticResource BoolToVisibility}}">
+                        <ProgressBar
+                            Height="6"
+                            Maximum="1"
+                            Minimum="0"
+                            Value="{Binding ExtractProgress, Mode=OneWay}" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            FontSize="12"
+                            Style="{StaticResource MutedText}"
+                            Text="{Binding ExtractStatus}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Templates  -->
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc tools.templates}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc tools.templatesHint}" />
+                    <ListBox
+                        MinHeight="40"
+                        MaxHeight="180"
+                        DisplayMemberPath="DisplayName"
+                        ItemsSource="{Binding UserTemplates}"
+                        SelectedItem="{Binding SelectedTemplate, Mode=TwoWay}" />
+                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                        <ui:Button
+                            Margin="0,0,6,0"
+                            Command="{Binding DeleteTemplateCommand}"
+                            Content="{loc:Loc cmd.delete}" />
+                        <ui:Button Command="{Binding OpenTemplateFolderCommand}" Content="{loc:Loc tools.openFolder}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Plug-ins  -->
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc tools.plugins}" />
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc tools.pluginsHint}" />
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        FontFamily="Consolas"
+                        FontSize="12"
+                        Text="{Binding PluginFolder}" />
+                    <ItemsControl ItemsSource="{Binding Plugins}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Margin="0,1" Text="{Binding StringFormat='• {0}'}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                        <ui:Button
+                            Margin="0,0,6,0"
+                            Command="{Binding OpenPluginFolderCommand}"
+                            Content="{loc:Loc tools.openPluginFolder}" />
+                        <ui:Button Command="{Binding OpenDataFolderCommand}" Content="{loc:Loc tools.openDataFolder}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+	
+</Page>

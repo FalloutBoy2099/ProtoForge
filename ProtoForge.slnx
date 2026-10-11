@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ProtoForge.Core.Tests/ProtoForge.Core.Tests.csproj" />
+  <Project Path="ProtoForge.Core/ProtoForge.Core.csproj" />
+  <Project Path="ProtoForge.Infrastructure/ProtoForge.Infrastructure.csproj" />
+  <Project Path="ProtoForge.UI/ProtoForge.UI.csproj" />
+</Solution>

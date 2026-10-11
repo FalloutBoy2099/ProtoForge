@@ -1,0 +1,16 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = false
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+[*.cs]
+csharp_style_namespace_declarations = block_scoped:suggestion
+csharp_using_directive_placement = inside_namespace:warning
+dotnet_style_predefined_type_for_locals_parameters_members = false:warning
+dotnet_style_predefined_type_for_member_access = false:warning
+dotnet_diagnostic.IDE0049.severity = warning

@@ -1,0 +1,192 @@
+<UserControl
+    x:Class="ProtoForge.UI.Views.CompareView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:ProtoForge.UI.Controls"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="SideHeader">
+            <Border Padding="12" Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border
+                        Width="84"
+                        Height="64"
+                        Margin="0,0,12,0"
+                        Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                        CornerRadius="6">
+                        <Image
+                            Margin="3"
+                            RenderOptions.BitmapScalingMode="NearestNeighbor"
+                            Source="{Binding Image}"
+                            Stretch="Uniform" />
+                    </Border>
+                    <StackPanel Grid.Column="1">
+                        <controls:EntryPicker Entries="{Binding DataContext.Entries, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedEntry="{Binding Entry, Mode=TwoWay}" />
+                        <ComboBox
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Stretch"
+                            ItemsSource="{Binding DataContext.Versions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            SelectedItem="{Binding Version, Mode=TwoWay}" />
+                        <TextBlock
+                            Margin="0,6,0,0"
+                            FontSize="11"
+                            Style="{StaticResource MutedText}"
+                            Text="{Binding Subtitle}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <Style
+            x:Key="CompareRowStyle"
+            BasedOn="{StaticResource DefaultDataGridRowStyle}"
+            TargetType="DataGridRow">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDifferent}" Value="True">
+                    <Setter Property="Background" Value="#33FFB02E" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ContentPresenter Content="{Binding Left}" ContentTemplate="{StaticResource SideHeader}" />
+            <ui:Button
+                Grid.Column="1"
+                Margin="8,0"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{loc:Loc compare.swap}"
+                Command="{Binding SwapCommand}"
+                ToolTip="{loc:Loc compare.swap}">
+                <ui:SymbolIcon Symbol="ArrowSwap24" />
+            </ui:Button>
+            <ContentPresenter
+                Grid.Column="2"
+                Content="{Binding Right}"
+                ContentTemplate="{StaticResource SideHeader}" />
+        </Grid>
+
+        <DockPanel
+            Grid.Row="1"
+            Margin="0,0,0,8"
+            LastChildFill="False">
+            <TextBlock
+                VerticalAlignment="Center"
+                DockPanel.Dock="Left"
+                FontWeight="SemiBold"
+                Text="{Binding Summary}" />
+            <ui:Button
+                Margin="8,0,0,0"
+                Command="{Binding OpenInWindowCommand}"
+                Content="{loc:Loc compare.newWindow}"
+                DockPanel.Dock="Right">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Window24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <CheckBox
+                Content="{loc:Loc compare.differencesOnly}"
+                DockPanel.Dock="Right"
+                IsChecked="{Binding DifferencesOnly, Mode=TwoWay}" />
+        </DockPanel>
+
+        <TabControl
+            Grid.Row="2"
+            Padding="0"
+            Background="Transparent">
+            <TabItem Header="{loc:Loc compare.fields}">
+                <ui:DataGrid
+                    Margin="0,8,0,0"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    GridLinesVisibility="None"
+                    HeadersVisibility="Column"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding RowsView}"
+                    RowStyle="{StaticResource CompareRowStyle}"
+                    SelectionMode="Single"
+                    VirtualizingPanel.IsVirtualizing="True"
+                    VirtualizingPanel.IsVirtualizingWhenGrouping="True">
+                    <ui:DataGrid.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        Margin="6,10,0,4"
+                                        FontWeight="SemiBold"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding Name}" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ui:DataGrid.GroupStyle>
+                    <ui:DataGrid.Columns>
+                        <DataGridTextColumn
+                            Width="220"
+                            Binding="{Binding Label}"
+                            Header="{loc:Loc compare.field}" />
+                        <DataGridTextColumn
+                            Width="*"
+                            Binding="{Binding ValueA}"
+                            Header="{loc:Loc compare.left}" />
+                        <DataGridTextColumn
+                            Width="*"
+                            Binding="{Binding ValueB}"
+                            Header="{loc:Loc compare.right}" />
+                    </ui:DataGrid.Columns>
+                </ui:DataGrid>
+            </TabItem>
+            <TabItem Header="{loc:Loc tab.hex}">
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ScrollViewer
+                        DataContext="{Binding Left}"
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto">
+                        <controls:HexViewer
+                            HorizontalAlignment="Left"
+                            ChangedOffsets="{Binding Changed}"
+                            Data="{Binding Data}"
+                            IsEnabled="False" />
+                    </ScrollViewer>
+                    <ScrollViewer
+                        Grid.Column="2"
+                        DataContext="{Binding Right}"
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto">
+                        <controls:HexViewer
+                            HorizontalAlignment="Left"
+                            ChangedOffsets="{Binding Changed}"
+                            Data="{Binding Data}"
+                            IsEnabled="False" />
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+
+</UserControl>

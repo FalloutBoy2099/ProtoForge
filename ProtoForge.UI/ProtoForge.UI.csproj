@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>ProtoForge.UI</RootNamespace>
+		<AssemblyName>ProtoForge</AssemblyName>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+		<Description>ProtoForge: Fallout 1/2 prototype editor</Description>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<AssemblyTitle>ProtoForge</AssemblyTitle>
+		<ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+		<AssemblyVersion>2026.10.11.1</AssemblyVersion>
+		<FileVersion>2026.10.11.1</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ProtoForge.Core\ProtoForge.Core.csproj" />
+		<ProjectReference Include="..\ProtoForge.Infrastructure\ProtoForge.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+		<PackageReference Include="WPF-UI" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\Strings\*.json" WithCulture="false" />
+		<Resource Include="Assets\**\*" />
+		<EmbeddedResource Include="..\README.md" LogicalName="README.md" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,147 @@
+<Page
+    x:Class="ProtoForge.UI.Views.AboutPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="About"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel
+            MaxWidth="820"
+            Margin="16,4,16,16"
+            HorizontalAlignment="Left">
+            <Border
+                Margin="0,0,0,12"
+                Padding="24"
+                Style="{StaticResource CardPanel}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Image
+                        Width="96"
+                        Height="96"
+                        Margin="0,0,24,0"
+                        Source="pack://application:,,,/ProtoForge;component/Assets/icon.png" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock
+                            FontSize="32"
+                            FontWeight="Bold"
+                            Text="ProtoForge" />
+                        <TextBlock
+                            Margin="0,2,0,8"
+                            FontSize="14"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Binding Tagline}" />
+                        <TextBlock Text="{Binding VersionText}" />
+                        <TextBlock
+                            Margin="0,2,0,0"
+                            FontWeight="SemiBold"
+                            Text="by Kain" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc about.what}" />
+                    <TextBlock Text="{loc:Loc about.description}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc about.credits}" />
+                    <TextBlock Text="{loc:Loc about.creditsText}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc about.help}" />
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button
+                            Margin="0,0,6,0"
+                            Command="{Binding ShowReadmeCommand}"
+                            Content="{loc:Loc about.readme}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="BookOpen24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Margin="0,0,6,0"
+                            Command="{Binding OpenHomepageCommand}"
+                            Content="{loc:Loc about.homepage}"
+                            Visibility="{Binding HasHomepage, Converter={StaticResource BoolToVisibility}}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="Globe24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button
+                            Command="{Binding CheckForUpdatesCommand}"
+                            Content="{loc:Loc about.updates}"
+                            Visibility="{Binding CanCheckForUpdates, Converter={StaticResource BoolToVisibility}}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowSync24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc about.shortcuts}" />
+                    <ItemsControl ItemsSource="{Binding Shortcuts}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="170" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        FontFamily="Consolas"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding Key}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc about.system}" />
+                    <TextBlock
+                        FontFamily="Consolas"
+                        FontSize="12"
+                        Text="{Binding SystemInfo}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+
+</Page>

@@ -1,0 +1,939 @@
+<Page
+    x:Class="ProtoForge.UI.Views.LibraryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:ProtoForge.UI.Controls"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:ProtoForge.UI.ViewModels"
+    Title="Library"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    KeyboardNavigation.TabNavigation="Local"
+    PreviewKeyDown="OnPageKeyDown"
+    ScrollViewer.CanContentScroll="False">
+
+    <Grid>
+        <!--  Welcome state: nothing is open  -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding Workspace.HasWorkspace, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+            <StackPanel
+                MaxWidth="760"
+                Margin="24,16"
+                HorizontalAlignment="Center">
+                <TextBlock Style="{StaticResource PageTitle}" Text="{loc:Loc welcome.title}" />
+                <TextBlock
+                    Margin="0,6,0,24"
+                    FontSize="14"
+                    Style="{StaticResource MutedText}"
+                    Text="{loc:Loc welcome.subtitle}" />
+                <UniformGrid Columns="3">
+                    <ui:CardAction
+                        Height="96"
+                        Margin="0,0,10,0"
+                        Command="{Binding Main.OpenGameFolderCommand}">
+                        <StackPanel>
+                            <ui:SymbolIcon
+                                Margin="0,0,0,10"
+                                FontSize="22"
+                                Symbol="Folder24" />
+                            <TextBlock
+                                FontWeight="SemiBold"
+                                Text="{loc:Loc open.gameFolder}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                FontSize="12"
+                                Style="{StaticResource MutedText}"
+                                Text="{loc:Loc welcome.gameHint}" />
+                        </StackPanel>
+                    </ui:CardAction>
+                    <ui:CardAction
+                        Height="96"
+                        Margin="0,0,10,0"
+                        Command="{Binding Main.OpenModFolderCommand}">
+                        <StackPanel>
+                            <ui:SymbolIcon
+                                Margin="0,0,0,10"
+                                FontSize="22"
+                                Symbol="Box24" />
+                            <TextBlock
+                                FontWeight="SemiBold"
+                                Text="{loc:Loc open.modFolder}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                FontSize="12"
+                                Style="{StaticResource MutedText}"
+                                Text="{loc:Loc welcome.modHint}" />
+                        </StackPanel>
+                    </ui:CardAction>
+                    <ui:CardAction Height="96" Command="{Binding Main.OpenDatArchiveCommand}">
+                        <StackPanel>
+                            <ui:SymbolIcon
+                                Margin="0,0,0,10"
+                                FontSize="22"
+                                Symbol="DocumentArrowLeft24" />
+                            <TextBlock
+                                FontWeight="SemiBold"
+                                Text="{loc:Loc open.datFile}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                FontSize="12"
+                                Style="{StaticResource MutedText}"
+                                Text="{loc:Loc welcome.datHint}" />
+                        </StackPanel>
+                    </ui:CardAction>
+                </UniformGrid>
+
+                <TextBlock
+                    Margin="0,30,0,8"
+                    Style="{StaticResource SectionTitle}"
+                    Text="{loc:Loc open.recent}"
+                    Visibility="{Binding Main.RecentProjects.Count, Converter={StaticResource VisibleWhen}}" />
+                <ItemsControl ItemsSource="{Binding Main.RecentProjects}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <ui:CardAction
+                                Margin="0,0,0,6"
+                                Padding="14,10"
+                                Command="{Binding DataContext.Main.OpenRecentCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                CommandParameter="{Binding}">
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Style="{StaticResource MutedText}"
+                                        Text="{Binding Layout.OutputFolder}" />
+                                </StackPanel>
+                            </ui:CardAction>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock
+                    Margin="0,24,0,0"
+                    Style="{StaticResource MutedText}"
+                    Text="{loc:Loc welcome.dragHint}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!--  Library  -->
+        <Grid x:Name="LibraryRoot" Visibility="{Binding Workspace.HasWorkspace, Converter={StaticResource VisibleWhen}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*" MinWidth="380" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="6*" MinWidth="460" />
+            </Grid.ColumnDefinitions>
+
+            <!--  List  -->
+            <Grid Grid.Column="0" Margin="8,0,0,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ListBox
+                    Grid.Row="0"
+                    Margin="0,0,0,8"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    ItemsSource="{Binding TypeFilters}"
+                    KeyboardNavigation.DirectionalNavigation="Contained"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                    SelectedItem="{Binding SelectedTypeFilter, Mode=TwoWay}">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="4,2" Orientation="Horizontal">
+                                <TextBlock
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding Label}" />
+                                <TextBlock
+                                    Margin="6,0,0,0"
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                    Text="{Binding Count}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <DockPanel
+                    Grid.Row="1"
+                    Margin="0,0,0,8"
+                    LastChildFill="False">
+                    <ComboBox
+                        MinWidth="150"
+                        Margin="0,0,8,0"
+                        DockPanel.Dock="Left"
+                        ItemsSource="{Binding AvailableKinds}"
+                        SelectedItem="{Binding KindFilter, Mode=TwoWay}"
+                        Visibility="{Binding AvailableKinds.Count, Converter={StaticResource VisibleWhen}}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource KindLabel}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <ToggleButton
+                        x:Name="FilterToggle"
+                        Margin="0,0,8,0"
+                        Padding="10,5"
+                        AutomationProperties.Name="{loc:Loc filter.title}"
+                        DockPanel.Dock="Left"
+                        ToolTip="{loc:Loc filter.title}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Margin="0,0,6,0" Symbol="Filter24" />
+                            <TextBlock Text="{loc:Loc filter.title}" />
+                        </StackPanel>
+                    </ToggleButton>
+                    <Popup
+                        AllowsTransparency="True"
+                        IsOpen="{Binding IsChecked, ElementName=FilterToggle, Mode=TwoWay}"
+                        Placement="Bottom"
+                        PlacementTarget="{Binding ElementName=FilterToggle}"
+                        PopupAnimation="Fade"
+                        StaysOpen="False">
+                        <Border
+                            Width="340"
+                            Margin="8"
+                            Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+                            Style="{StaticResource CardPanel}">
+                            <Border.Effect>
+                                <DropShadowEffect
+                                    BlurRadius="16"
+                                    Opacity="0.4"
+                                    ShadowDepth="2" />
+                            </Border.Effect>
+                            <StackPanel>
+                                <CheckBox Content="{loc:Loc filter.modifiedOnly}" IsChecked="{Binding ModifiedOnly}" />
+                                <CheckBox Content="{loc:Loc filter.errorsOnly}" IsChecked="{Binding ErrorsOnly}" />
+                                <TextBlock
+                                    Margin="0,10,0,3"
+                                    Style="{StaticResource FieldLabel}"
+                                    Text="{loc:Loc filter.art}" />
+                                <ComboBox HorizontalAlignment="Stretch" SelectedIndex="{Binding ArtFilter, Mode=TwoWay}">
+                                    <ComboBoxItem Content="{loc:Loc filter.artAny}" />
+                                    <ComboBoxItem Content="{loc:Loc filter.artValid}" />
+                                    <ComboBoxItem Content="{loc:Loc filter.artMissing}" />
+                                </ComboBox>
+                                <TextBlock
+                                    Margin="0,10,0,3"
+                                    Style="{StaticResource FieldLabel}"
+                                    Text="{loc:Loc filter.source}" />
+                                <ComboBox
+                                    HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding Sources}"
+                                    SelectedItem="{Binding SourceFilter, Mode=TwoWay}" />
+                                <TextBlock
+                                    Margin="0,10,0,3"
+                                    Style="{StaticResource FieldLabel}"
+                                    Text="{loc:Loc filter.flag}" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="120" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox
+                                        HorizontalAlignment="Stretch"
+                                        ItemsSource="{Binding FlagFilters}"
+                                        MaxDropDownHeight="320"
+                                        SelectedItem="{Binding FlagFilter, Mode=TwoWay}" />
+                                    <ComboBox Grid.Column="2" SelectedIndex="{Binding FlagFilterMode, Mode=TwoWay}">
+                                        <ComboBoxItem Content="{loc:Loc filter.flagSet}" />
+                                        <ComboBoxItem Content="{loc:Loc filter.flagClear}" />
+                                    </ComboBox>
+                                </Grid>
+                                <ui:Button
+                                    Margin="0,14,0,0"
+                                    HorizontalAlignment="Stretch"
+                                    Command="{Binding ClearFiltersCommand}"
+                                    Content="{loc:Loc filter.clear}" />
+                                <TextBlock
+                                    Margin="0,10,0,0"
+                                    FontSize="11"
+                                    Style="{StaticResource MutedText}"
+                                    Text="{loc:Loc filter.syntaxHint}" />
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
+                    <ui:Button
+                        Margin="4,0,0,0"
+                        AutomationProperties.Name="{loc:Loc cmd.delete}"
+                        Command="{Binding DeleteCommand}"
+                        DockPanel.Dock="Right"
+                        ToolTip="{loc:Loc cmd.delete}">
+                        <ui:SymbolIcon Symbol="Delete24" />
+                    </ui:Button>
+                    <ui:Button
+                        Margin="4,0,0,0"
+                        AutomationProperties.Name="{loc:Loc cmd.duplicate}"
+                        Command="{Binding DuplicateCommand}"
+                        DockPanel.Dock="Right"
+                        ToolTip="{loc:Loc cmd.duplicate}">
+                        <ui:SymbolIcon Symbol="Copy24" />
+                    </ui:Button>
+                    <ui:Button
+                        x:Name="NewButton"
+                        Appearance="Primary"
+                        Click="OnNewClick"
+                        Content="{loc:Loc cmd.new}"
+                        DockPanel.Dock="Right">
+                        <ui:Button.Icon>
+                            <ui:SymbolIcon Symbol="Add24" />
+                        </ui:Button.Icon>
+                    </ui:Button>
+                </DockPanel>
+
+                <ui:DataGrid
+                    x:Name="Grid"
+                    Grid.Row="2"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    CanUserDeleteRows="False"
+                    CanUserResizeRows="False"
+                    EnableRowVirtualization="True"
+                    GridLinesVisibility="None"
+                    HeadersVisibility="Column"
+                    IsReadOnly="True"
+                    IsTextSearchEnabled="True"
+                    ItemsSource="{Binding View}"
+                    KeyboardNavigation.TabNavigation="Once"
+                    MouseDoubleClick="OnGridDoubleClick"
+                    PreviewKeyDown="OnGridKeyDown"
+                    RowStyle="{StaticResource LibraryRow}"
+                    ScrollViewer.CanContentScroll="True"
+                    SelectionChanged="OnGridSelectionChanged"
+                    SelectionMode="Extended"
+                    SelectionUnit="FullRow"
+                    TextSearch.TextPath="Name"
+                    VirtualizingPanel.IsVirtualizing="True"
+                    VirtualizingPanel.VirtualizationMode="Recycling">
+                    <ui:DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem
+                                Command="{Binding DuplicateCommand}"
+                                Header="{loc:Loc cmd.duplicate}"
+                                InputGestureText="Ctrl+D" />
+                            <MenuItem
+                                Command="{Binding DeleteCommand}"
+                                Header="{loc:Loc cmd.delete}"
+                                InputGestureText="Del" />
+                            <Separator />
+                            <MenuItem Command="{Binding Editor.RestoreOriginalCommand}" Header="{loc:Loc edit.restoreOriginal}" />
+                            <MenuItem Command="{Binding Editor.RemoveOverrideCommand}" Header="{loc:Loc edit.removeOverride}" />
+                            <Separator />
+                            <MenuItem Command="{Binding CompareSelectedCommand}" Header="{loc:Loc cmd.compareSelected}" />
+                            <MenuItem Command="{Binding CopyPidCommand}" Header="{loc:Loc cmd.copyPid}" />
+                            <Separator />
+                            <MenuItem Command="{Binding ExportSelectionJsonCommand}" Header="{loc:Loc cmd.exportJson}" />
+                            <MenuItem Command="{Binding ExportSelectionCsvCommand}" Header="{loc:Loc cmd.exportCsv}" />
+                        </ContextMenu>
+                    </ui:DataGrid.ContextMenu>
+                    <ui:DataGrid.Columns>
+                        <DataGridTemplateColumn
+                            Width="30"
+                            CanUserSort="False"
+                            Header="">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12">
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource EntryStatus}">
+                                                <Binding Path="IsNew" />
+                                                <Binding Path="IsModified" />
+                                                <Binding Path="IsBroken" />
+                                                <Binding Path="WorstIssue" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                        <TextBlock.Foreground>
+                                            <Binding Converter="{StaticResource SeverityBrush}" Path="WorstIssue" />
+                                        </TextBlock.Foreground>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn
+                            Width="36"
+                            CanUserSort="False"
+                            Header="">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image
+                                        Width="28"
+                                        Height="20"
+                                        RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                        Source="{Binding Converter={StaticResource EntryThumbnail}, IsAsync=True}"
+                                        Stretch="Uniform" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn
+                            Width="*"
+                            MinWidth="140"
+                            Binding="{Binding DisplayName}"
+                            ElementStyle="{StaticResource CellText}"
+                            Header="{loc:Loc col.name}"
+                            SortMemberPath="Name" />
+                        <DataGridTextColumn
+                            Width="110"
+                            Binding="{Binding Kind, Converter={StaticResource KindLabel}}"
+                            ElementStyle="{StaticResource CellText}"
+                            Header="{loc:Loc col.kind}"
+                            SortMemberPath="Kind" />
+                        <DataGridTextColumn
+                            Width="112"
+                            Binding="{Binding Pid, Converter={StaticResource Pid}}"
+                            ElementStyle="{StaticResource CellText}"
+                            Header="PID"
+                            SortMemberPath="Pid" />
+                        <DataGridTemplateColumn
+                            Width="104"
+                            CanUserSort="False"
+                            Header="{loc:Loc col.attr}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        ToolTip="{loc:Loc tip.attr}">
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource EntryAttributes}">
+                                                <Binding Path="IsReadOnly" />
+                                                <Binding Path="IsBroken" />
+                                                <Binding Path="IsFallout1Format" />
+                                                <Binding Path="PendingOverrideRemoval" />
+                                                <Binding Path="CritterHp" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn
+                            Width="120"
+                            Binding="{Binding FileName}"
+                            ElementStyle="{StaticResource CellText}"
+                            Header="{loc:Loc col.file}" />
+                        <DataGridTextColumn
+                            Width="130"
+                            Binding="{Binding SourceName}"
+                            ElementStyle="{StaticResource CellText}"
+                            Header="{loc:Loc col.source}" />
+                    </ui:DataGrid.Columns>
+                </ui:DataGrid>
+
+                <Grid Grid.Row="3" Margin="2,6,2,0">
+                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}">
+                        <Run Text="{Binding ShownCount, Mode=OneWay}" />
+                        /<Run Text="{Binding TotalCount, Mode=OneWay}" />
+                        <Run Text="{loc:Loc list.shown}" />
+                        <Run Text="{Binding SelectedCount, Mode=OneWay, StringFormat=' · {0}'}" />
+                        <Run Text="{loc:Loc list.selected}" />
+                    </TextBlock>
+                </Grid>
+            </Grid>
+
+            <GridSplitter
+                Grid.Column="1"
+                Width="6"
+                HorizontalAlignment="Stretch"
+                Background="Transparent"
+                ResizeBehavior="PreviousAndNext" />
+
+            <!--  Editor  -->
+            <Grid
+                Grid.Column="2"
+                Margin="0,0,8,4"
+                DataContext="{Binding Editor}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border
+                    Grid.Row="0"
+                    Margin="0,0,0,4"
+                    Padding="8,6"
+                    Style="{StaticResource CardPanel}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,14,0" Orientation="Horizontal">
+                            <Border
+                                Width="64"
+                                Height="48"
+                                Margin="0,0,6,0"
+                                Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                                CornerRadius="6"
+                                Visibility="{Binding GroundImage, Converter={StaticResource VisibleWhen}}">
+                                <controls:AnimatedImage
+                                    Margin="3"
+                                    Cursor="Hand"
+                                    Frames="{Binding GroundFrames}"
+                                    FramesPerSecond="{Binding GroundFramesPerSecond}"
+                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                    Stretch="Uniform"
+                                    ToolTip="{loc:Loc preview.ground}">
+                                    <controls:AnimatedImage.InputBindings>
+                                        <MouseBinding Command="{Binding RotatePreviewCommand}" MouseAction="LeftClick" />
+                                    </controls:AnimatedImage.InputBindings>
+                                    <controls:AnimatedImage.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem
+                                                Command="{Binding SaveImageCommand}"
+                                                CommandParameter="ground:8"
+                                                Header="{loc:Loc image.saveBmp8}" />
+                                            <MenuItem
+                                                Command="{Binding SaveImageCommand}"
+                                                CommandParameter="ground:32"
+                                                Header="{loc:Loc image.saveBmp32}" />
+                                        </ContextMenu>
+                                    </controls:AnimatedImage.ContextMenu>
+                                </controls:AnimatedImage>
+                            </Border>
+                            <Border
+                                Width="64"
+                                Height="48"
+                                Margin="0,0,6,0"
+                                Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                                CornerRadius="6"
+                                Visibility="{Binding InventoryImage, Converter={StaticResource VisibleWhen}}">
+                                <Image
+                                    Margin="3"
+                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                    Source="{Binding InventoryImage}"
+                                    Stretch="Uniform"
+                                    ToolTip="{loc:Loc preview.inventory}">
+                                    <Image.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem
+                                                Command="{Binding SaveImageCommand}"
+                                                CommandParameter="inventory:8"
+                                                Header="{loc:Loc image.saveBmp8}" />
+                                            <MenuItem
+                                                Command="{Binding SaveImageCommand}"
+                                                CommandParameter="inventory:32"
+                                                Header="{loc:Loc image.saveBmp32}" />
+                                        </ContextMenu>
+                                    </Image.ContextMenu>
+                                </Image>
+                            </Border>
+                            <Border
+                                Width="64"
+                                Height="48"
+                                Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                                CornerRadius="6"
+                                Visibility="{Binding PortraitImage, Converter={StaticResource VisibleWhen}}">
+                                <Image
+                                    Margin="3"
+                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                    Source="{Binding PortraitImage}"
+                                    Stretch="Uniform"
+                                    ToolTip="{loc:Loc preview.portrait}">
+                                    <Image.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem
+                                                Command="{Binding SaveImageCommand}"
+                                                CommandParameter="portrait:8"
+                                                Header="{loc:Loc image.saveBmp8}" />
+                                            <MenuItem
+                                                Command="{Binding SaveImageCommand}"
+                                                CommandParameter="portrait:32"
+                                                Header="{loc:Loc image.saveBmp32}" />
+                                        </ContextMenu>
+                                    </Image.ContextMenu>
+                                </Image>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Text="{Binding Title}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                FontSize="12"
+                                Style="{StaticResource MutedText}"
+                                Text="{Binding Subtitle}"
+                                TextTrimming="CharacterEllipsis" />
+                            <ComboBox
+                                MinWidth="180"
+                                Margin="0,4,0,0"
+                                HorizontalAlignment="Left"
+                                AutomationProperties.Name="{loc:Loc kind.changeTip}"
+                                ItemsSource="{Binding KindOptions}"
+                                SelectedItem="{Binding SelectedKind, Mode=TwoWay}"
+                                ToolTip="{loc:Loc kind.changeTip}"
+                                Visibility="{Binding CanChangeKind, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
+                            <ui:Button
+                                Margin="0,0,4,0"
+                                AutomationProperties.Name="{loc:Loc edit.revert}"
+                                Command="{Binding RevertCommand}"
+                                ToolTip="{loc:Loc edit.revert}">
+                                <ui:SymbolIcon Symbol="ArrowCounterclockwise24" />
+                            </ui:Button>
+                            <ui:Button
+                                Margin="0,0,4,0"
+                                AutomationProperties.Name="{loc:Loc edit.restoreOriginal}"
+                                Command="{Binding RestoreOriginalCommand}"
+                                ToolTip="{loc:Loc edit.restoreOriginal}">
+                                <ui:SymbolIcon Symbol="History24" />
+                            </ui:Button>
+                            <ui:Button
+                                Margin="0,0,4,0"
+                                AutomationProperties.Name="{loc:Loc edit.removeOverride}"
+                                Command="{Binding RemoveOverrideCommand}"
+                                ToolTip="{loc:Loc edit.removeOverride}">
+                                <ui:SymbolIcon Symbol="DocumentDismiss24" />
+                            </ui:Button>
+                            <ui:Button
+                                Margin="0,0,4,0"
+                                AutomationProperties.Name="{loc:Loc cmd.compareVanilla}"
+                                Command="{Binding CompareWithVanillaCommand}"
+                                ToolTip="{loc:Loc cmd.compareVanilla}"
+                                Visibility="{Binding IsMultiple, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                                <ui:SymbolIcon Symbol="ArrowSwap24" />
+                            </ui:Button>
+                            <ui:Button
+                                AutomationProperties.Name="{loc:Loc template.saveTitle}"
+                                Command="{Binding SaveAsTemplateCommand}"
+                                ToolTip="{loc:Loc template.saveTitle}"
+                                Visibility="{Binding IsMultiple, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                                <ui:SymbolIcon Symbol="DocumentCopy24" />
+                            </ui:Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <TabControl
+                    x:Name="EditorTabs"
+                    Grid.Row="1"
+                    Padding="0"
+                    Background="Transparent"
+                    Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
+                    <TabItem Header="{loc:Loc tab.properties}">
+                        <ScrollViewer Padding="0,10,8,0" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <ui:InfoBar
+                                    Title="{loc:Loc problem.title}"
+                                    Margin="0,0,0,10"
+                                    IsClosable="False"
+                                    IsOpen="True"
+                                    Message="{Binding Problem}"
+                                    Severity="Warning"
+                                    Visibility="{Binding Problem, Converter={StaticResource VisibleWhen}}" />
+
+                                <!--  Texts  -->
+                                <Border
+                                    Margin="0,0,0,10"
+                                    Style="{StaticResource CardPanel}"
+                                    Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc field.name}" />
+                                        <ui:TextBox
+                                            IsEnabled="{Binding CanEditText}"
+                                            PlaceholderText="{loc:Loc field.namePlaceholder}"
+                                            Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                        <TextBlock
+                                            Margin="0,10,0,3"
+                                            Style="{StaticResource FieldLabel}"
+                                            Text="{loc:Loc field.description}" />
+                                        <ui:TextBox
+                                            AcceptsReturn="False"
+                                            IsEnabled="{Binding CanEditText}"
+                                            MaxLines="5"
+                                            MinLines="2"
+                                            PlaceholderText="{loc:Loc field.descriptionPlaceholder}"
+                                            Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                            TextWrapping="Wrap" />
+                                        <TextBlock
+                                            Margin="0,6,0,0"
+                                            FontSize="11"
+                                            Style="{StaticResource MutedText}"
+                                            Text="{loc:Loc field.textHint}"
+                                            Visibility="{Binding IsMultiple, Converter={StaticResource BoolToVisibility}}" />
+                                        <StackPanel
+                                            Margin="0,10,0,0"
+                                            Orientation="Horizontal"
+                                            Visibility="{Binding IsWeapon, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                Text="{loc:Loc weapon.score}" />
+                                            <TextBlock
+                                                Margin="8,0,0,0"
+                                                VerticalAlignment="Center"
+                                                FontWeight="SemiBold"
+                                                Text="{Binding WeaponScore}" />
+                                            <ComboBox
+                                                MinWidth="190"
+                                                Margin="14,0,0,0"
+                                                AutomationProperties.Name="{loc:Loc weapon.score}"
+                                                SelectedIndex="{Binding WeaponScoreType, Mode=TwoWay}">
+                                                <ComboBoxItem Content="{loc:Loc weapon.scoreFixed}" />
+                                                <ComboBoxItem Content="{loc:Loc weapon.scoreOriginal}" />
+                                            </ComboBox>
+                                            <ui:Button
+                                                Margin="14,0,0,0"
+                                                Command="{Binding PlaySoundCommand}"
+                                                Content="{loc:Loc weapon.playSound}"
+                                                ToolTip="{loc:Loc weapon.playSoundTip}">
+                                                <ui:Button.Icon>
+                                                    <ui:SymbolIcon Symbol="Speaker224" />
+                                                </ui:Button.Icon>
+                                            </ui:Button>
+                                        </StackPanel>
+                                        <StackPanel
+                                            Margin="0,10,0,0"
+                                            Orientation="Horizontal"
+                                            Visibility="{Binding IsArmor, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock
+                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                Text="{loc:Loc armor.score}"
+                                                ToolTip="{loc:Loc armor.scoreTip}" />
+                                            <TextBlock
+                                                Margin="8,0,0,0"
+                                                FontWeight="SemiBold"
+                                                Text="{Binding ArmorScore}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <ui:Button
+                                    Margin="0,0,0,10"
+                                    AutomationProperties.Name="{loc:Loc critter.computeStatsTip}"
+                                    Command="{Binding ComputeDerivedStatsCommand}"
+                                    Content="{loc:Loc critter.computeStats}"
+                                    ToolTip="{loc:Loc critter.computeStatsTip}"
+                                    Visibility="{Binding IsCritter, Converter={StaticResource BoolToVisibility}}">
+                                    <ui:Button.Icon>
+                                        <ui:SymbolIcon Symbol="Flash24" />
+                                    </ui:Button.Icon>
+                                </ui:Button>
+
+                                <Border
+                                    Margin="0,0,0,10"
+                                    Style="{StaticResource CardPanel}"
+                                    Visibility="{Binding IsCritter, Converter={StaticResource BoolToVisibility}}">
+                                    <StackPanel>
+                                        <TextBlock
+                                            Style="{StaticResource SectionTitle}"
+                                            Text="{loc:Loc critter.armorTitle}"
+                                            ToolTip="{loc:Loc critter.armorTip}" />
+                                        <Grid Margin="0,6,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox
+                                                AutomationProperties.Name="{loc:Loc critter.armorTitle}"
+                                                ItemsSource="{Binding ArmorOptions}"
+                                                MaxDropDownHeight="360"
+                                                SelectedItem="{Binding SelectedArmor, Mode=TwoWay}">
+                                                <ComboBox.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VirtualizingStackPanel />
+                                                    </ItemsPanelTemplate>
+                                                </ComboBox.ItemsPanel>
+                                            </ComboBox>
+                                            <ui:Button
+                                                Grid.Column="2"
+                                                Command="{Binding ApplyArmorCommand}"
+                                                Content="{loc:Loc critter.applyArmor}"
+                                                ToolTip="{loc:Loc critter.armorTip}" />
+                                        </Grid>
+                                        <TextBlock
+                                            Margin="0,6,0,0"
+                                            FontFamily="Consolas"
+                                            FontSize="11"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding ArmorInfo}"
+                                            Visibility="{Binding ArmorInfo, Converter={StaticResource VisibleWhen}}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <ItemsControl ItemsSource="{Binding Groups}" />
+
+                                <!--  AI packet of critters  -->
+                                <ui:CardExpander Margin="0,0,0,10" Visibility="{Binding AiTitle, Converter={StaticResource VisibleWhen}}">
+                                    <ui:CardExpander.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Margin="0,0,8,0" Symbol="Bot24" />
+                                            <TextBlock Style="{StaticResource SectionTitle}" Text="{Binding AiTitle}" />
+                                        </StackPanel>
+                                    </ui:CardExpander.Header>
+                                    <ItemsControl ItemsSource="{Binding AiDetails}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="200" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Key}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Value}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ui:CardExpander>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="{loc:Loc tab.hex}" Visibility="{Binding ShowAdvanced, Converter={StaticResource BoolToVisibility}}">
+                        <DockPanel Margin="0,10,0,0" DataContext="{Binding Hex}">
+                            <ui:Button
+                                Margin="4,0,0,8"
+                                HorizontalAlignment="Left"
+                                Command="{Binding OpenInExternalEditorCommand}"
+                                Content="{loc:Loc hex.external}"
+                                DockPanel.Dock="Top"
+                                IsEnabled="{Binding HasData}"
+                                ToolTip="{loc:Loc hex.externalTip}">
+                                <ui:Button.Icon>
+                                    <ui:SymbolIcon Symbol="Open24" />
+                                </ui:Button.Icon>
+                            </ui:Button>
+                            <TextBlock
+                                Margin="4,8,4,0"
+                                DockPanel.Dock="Bottom"
+                                FontFamily="Consolas"
+                                Text="{Binding SelectionInfo}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Margin="4,8,4,0"
+                                DockPanel.Dock="Bottom"
+                                FontSize="11"
+                                Style="{StaticResource MutedText}"
+                                Text="{loc:Loc hex.hint}" />
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                <controls:HexViewer
+                                    x:Name="HexView"
+                                    HorizontalAlignment="Left"
+                                    ByteEdited="OnHexByteEdited"
+                                    ChangedOffsets="{Binding ChangedOffsets}"
+                                    Data="{Binding Data}"
+                                    Regions="{Binding Regions}"
+                                    SelectedOffset="{Binding SelectedOffset, Mode=TwoWay}" />
+                            </ScrollViewer>
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="{loc:Loc tab.fields}" Visibility="{Binding ShowAdvanced, Converter={StaticResource BoolToVisibility}}">
+                        <ui:DataGrid
+                            Margin="0,10,0,0"
+                            AutoGenerateColumns="False"
+                            AutomationProperties.Name="{loc:Loc tab.fields}"
+                            CanUserAddRows="False"
+                            CanUserDeleteRows="False"
+                            DataContext="{Binding Table}"
+                            GridLinesVisibility="None"
+                            HeadersVisibility="Column"
+                            ItemsSource="{Binding Rows}"
+                            ScrollViewer.CanContentScroll="True"
+                            SelectionMode="Single"
+                            VirtualizingPanel.IsVirtualizing="True">
+                            <ui:DataGrid.Columns>
+                                <DataGridTextColumn
+                                    Width="*"
+                                    MinWidth="160"
+                                    Binding="{Binding Label}"
+                                    ElementStyle="{StaticResource CellText}"
+                                    Header="{loc:Loc table.name}"
+                                    IsReadOnly="True" />
+                                <DataGridTextColumn
+                                    Width="130"
+                                    Binding="{Binding Position}"
+                                    ElementStyle="{StaticResource CellText}"
+                                    Header="{loc:Loc table.position}"
+                                    IsReadOnly="True" />
+                                <DataGridTemplateColumn Width="110" Header="{loc:Loc table.decimal}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ui:NumberBox
+                                                Margin="0,1"
+                                                ClearButtonEnabled="False"
+                                                IsEnabled="{Binding IsEditable}"
+                                                MaxDecimalPlaces="0"
+                                                SpinButtonPlacementMode="Hidden"
+                                                Value="{Binding Number, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="120" Header="{loc:Loc table.hex}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ui:TextBox
+                                                Margin="0,1"
+                                                FontFamily="Consolas"
+                                                IsEnabled="{Binding IsEditable}"
+                                                Text="{Binding Hex, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </ui:DataGrid.Columns>
+                        </ui:DataGrid>
+                    </TabItem>
+                </TabControl>
+
+                <StackPanel
+                    Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Visibility="{Binding HasSelection, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                    <ui:SymbolIcon
+                        HorizontalAlignment="Center"
+                        FontSize="42"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        Symbol="Edit24" />
+                    <TextBlock
+                        Margin="0,12,0,0"
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc editor.nothing}" />
+                </StackPanel>
+
+                <ToggleButton
+                    Grid.Row="1"
+                    Margin="0,2,10,0"
+                    Padding="8,3"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    AutomationProperties.Name="{loc:Loc editor.advancedTip}"
+                    FontSize="12"
+                    IsChecked="{Binding ShowAdvanced, Mode=TwoWay}"
+                    ToolTip="{loc:Loc editor.advancedTip}"
+                    Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon
+                            Margin="0,0,6,0"
+                            FontSize="14"
+                            Symbol="Code24" />
+                        <TextBlock Text="{loc:Loc editor.advanced}" />
+                    </StackPanel>
+                </ToggleButton>
+            </Grid>
+        </Grid>
+    </Grid>
+
+</Page>

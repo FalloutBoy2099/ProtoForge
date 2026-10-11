@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>ProtoForge.Core</RootNamespace>
+		<AssemblyName>ProtoForge.Core</AssemblyName>
+		<Description>ProtoForge core: binary formats (PRO, DAT, LST, MSG, FRM), domain model, validation and editing services.</Description>
+		<AssemblyVersion>2026.10.11.1</AssemblyVersion>
+		<FileVersion>2026.10.11.1</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\**\*" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,130 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="clr-namespace:ProtoForge.UI.Converters"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <!--  Dense layout, like DatExplorerIII: 12 px text, small paddings, 20-24 px rows.  -->
+    <sys:Double x:Key="ControlContentThemeFontSize">12</sys:Double>
+
+    <Style BasedOn="{StaticResource {x:Type ui:Button}}" TargetType="ui:Button">
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type ui:TextBox}}" TargetType="ui:TextBox">
+        <Setter Property="Padding" Value="6,3" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type ui:NumberBox}}" TargetType="ui:NumberBox">
+        <Setter Property="Padding" Value="6,3" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type ComboBox}}" TargetType="ComboBox">
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type ToggleButton}}" TargetType="ToggleButton">
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type CheckBox}}" TargetType="CheckBox">
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style BasedOn="{StaticResource {x:Type ui:DataGrid}}" TargetType="ui:DataGrid">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="RowHeight" Value="24" />
+        <Setter Property="ColumnHeaderHeight" Value="24" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type TabItem}}" TargetType="TabItem">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="8,3" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type ui:CardExpander}}" TargetType="ui:CardExpander">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Padding" Value="8,2" />
+    </Style>
+    <Style BasedOn="{StaticResource {x:Type ui:NavigationViewItem}}" TargetType="ui:NavigationViewItem">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="MinHeight" Value="28" />
+    </Style>
+
+    <conv:VisibleWhenConverter x:Key="VisibleWhen" />
+    <conv:KindLabelConverter x:Key="KindLabel" />
+    <conv:PidConverter x:Key="Pid" />
+    <conv:SeverityBrushConverter x:Key="SeverityBrush" />
+    <conv:SeverityIconConverter x:Key="SeverityIcon" />
+    <conv:EntryStatusConverter x:Key="EntryStatus" />
+    <conv:EntryThumbnailConverter x:Key="EntryThumbnail" />
+    <conv:EntryAttributesConverter x:Key="EntryAttributes" />
+
+    <Style x:Key="FieldLabel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="SectionTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="PageTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="MutedText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="MixedBadge" TargetType="TextBlock">
+        <Setter Property="Text" Value="≠" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Margin" Value="6,0,0,3" />
+        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+        <Setter Property="ToolTip" Value="Different values in the selection" />
+    </Style>
+
+    <Style x:Key="CardPanel" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="8" />
+    </Style>
+
+    <!--  Library rows: coloured by state, with a compact height so thousands of rows stay readable.  -->
+    <Style
+        x:Key="LibraryRow"
+        BasedOn="{StaticResource DefaultDataGridRowStyle}"
+        TargetType="DataGridRow">
+        <Setter Property="MinHeight" Value="20" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsModified}" Value="True">
+                <Setter Property="Foreground" Value="#FCC84B" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsNew}" Value="True">
+                <Setter Property="Foreground" Value="#6CCB5F" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsBroken}" Value="True">
+                <Setter Property="Foreground" Value="#FF6B6B" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="CellText" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+</ResourceDictionary>

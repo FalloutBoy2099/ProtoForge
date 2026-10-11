@@ -1,0 +1,310 @@
+<Page
+    x:Class="ProtoForge.UI.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Settings"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False">
+	
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel
+            MaxWidth="980"
+            Margin="16,4,16,16"
+            HorizontalAlignment="Left">
+            <TextBlock
+                Margin="0,0,0,16"
+                Style="{StaticResource PageTitle}"
+                Text="{loc:Loc settings.title}" />
+
+            <!--  Appearance  -->
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,10"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc settings.appearance}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                            Margin="0,0,0,8"
+                            VerticalAlignment="Center"
+                            Text="{loc:Loc settings.theme}" />
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="220"
+                            Margin="0,0,0,8"
+                            HorizontalAlignment="Left"
+                            ItemsSource="{Binding Themes}"
+                            SelectedItem="{Binding Theme, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Row="1"
+                            VerticalAlignment="Center"
+                            Text="{loc:Loc settings.language}" />
+                        <ComboBox
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Width="220"
+                            HorizontalAlignment="Left"
+                            DisplayMemberPath="Value"
+                            ItemsSource="{Binding Languages}"
+                            SelectedValue="{Binding UiLanguage, Mode=TwoWay}"
+                            SelectedValuePath="Key" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!--  Game sources  -->
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc settings.sources}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc settings.sourcesHint}" />
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc settings.baseGame}" />
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBox Text="{Binding BaseGameFolder, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                        <ui:Button
+                            Grid.Column="1"
+                            Margin="8,0,0,0"
+                            Command="{Binding BrowseBaseGameCommand}"
+                            Content="{loc:Loc common.browse}" />
+                    </Grid>
+
+                    <StackPanel Visibility="{Binding HasWorkspace, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc settings.output}" />
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBox Text="{Binding OutputFolder, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                            <ui:Button
+                                Grid.Column="1"
+                                Margin="8,0,0,0"
+                                Command="{Binding BrowseOutputCommand}"
+                                Content="{loc:Loc common.browse}" />
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc settings.gameLanguage}" />
+                        <ui:TextBox
+                            Width="220"
+                            Margin="0,0,0,14"
+                            HorizontalAlignment="Left"
+                            Text="{Binding GameLanguage, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc settings.layers}" />
+                        <ui:ListView
+                            MaxHeight="340"
+                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            ItemsSource="{Binding Layers}"
+                            SelectedItem="{Binding SelectedLayer, Mode=TwoWay}">
+                            <ui:ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox
+                                            MinWidth="0"
+                                            Margin="0,0,10,0"
+                                            VerticalAlignment="Center"
+                                            IsChecked="{Binding IsEnabled, Mode=TwoWay}" />
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                            <TextBlock
+                                                FontSize="11"
+                                                Style="{StaticResource MutedText}"
+                                                Text="{Binding Path}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel
+                                            Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="0,0,8,0"
+                                                FontSize="11"
+                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                Text="{Binding Kind}" />
+                                            <TextBlock
+                                                Margin="0,0,8,0"
+                                                FontSize="11"
+                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                Text="{Binding Role}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ui:ListView.ItemTemplate>
+                        </ui:ListView>
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                AutomationProperties.Name="{loc:Loc layer.higher}"
+                                Command="{Binding MoveLayerUpCommand}"
+                                CommandParameter="{Binding SelectedLayer}"
+                                ToolTip="{loc:Loc layer.higher}">
+                                <ui:SymbolIcon Symbol="ArrowUp24" />
+                            </ui:Button>
+                            <ui:Button
+                                Margin="0,0,14,0"
+                                AutomationProperties.Name="{loc:Loc layer.lower}"
+                                Command="{Binding MoveLayerDownCommand}"
+                                CommandParameter="{Binding SelectedLayer}"
+                                ToolTip="{loc:Loc layer.lower}">
+                                <ui:SymbolIcon Symbol="ArrowDown24" />
+                            </ui:Button>
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Command="{Binding AddFolderLayerCommand}"
+                                Content="{loc:Loc layer.addFolder}" />
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Command="{Binding AddDatLayerCommand}"
+                                Content="{loc:Loc layer.addDat}" />
+                            <ui:Button
+                                Margin="0,0,14,0"
+                                Command="{Binding RemoveLayerCommand}"
+                                CommandParameter="{Binding SelectedLayer}"
+                                Content="{loc:Loc layer.remove}" />
+                        </StackPanel>
+                        <TextBlock
+                            Margin="0,8,0,0"
+                            FontSize="12"
+                            Style="{StaticResource MutedText}"
+                            Text="{loc:Loc layer.priorityHint}" />
+                        <ui:Button
+                            Margin="0,14,0,0"
+                            Appearance="Primary"
+                            Command="{Binding ApplyLayoutCommand}"
+                            Content="{loc:Loc settings.apply}"
+                            Visibility="{Binding LayoutDirty, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Working set  -->
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc settings.workingSet}" />
+                    <TextBlock
+                        Margin="0,0,0,10"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc settings.workingSetHint}" />
+                    <ItemsControl ItemsSource="{Binding WorkingSet}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox
+                                    Width="150"
+                                    Content="{Binding Label}"
+                                    IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock
+                        Margin="0,12,0,3"
+                        Style="{StaticResource FieldLabel}"
+                        Text="{loc:Loc settings.codePage}" />
+                    <ComboBox
+                        Width="320"
+                        HorizontalAlignment="Left"
+                        ItemsSource="{Binding CodePages}"
+                        SelectedItem="{Binding SelectedCodePage, Mode=TwoWay}" />
+                </StackPanel>
+            </Border>
+
+            <!--  Editing  -->
+            <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,10"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc settings.editing}" />
+                    <CheckBox Content="{loc:Loc settings.confirmSave}" IsChecked="{Binding ConfirmBeforeSave, Mode=TwoWay}" />
+                    <CheckBox Content="{loc:Loc settings.backup}" IsChecked="{Binding BackupBeforeSave, Mode=TwoWay}" />
+                    <CheckBox Content="{loc:Loc settings.readOnly}" IsChecked="{Binding ReadOnlyAttribute, Mode=TwoWay}" />
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                            Margin="0,0,0,8"
+                            VerticalAlignment="Center"
+                            Text="{loc:Loc settings.formula}" />
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="220"
+                            Margin="0,0,0,8"
+                            HorizontalAlignment="Left"
+                            SelectedIndex="{Binding FormulaIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="Fallout 2" />
+                            <ComboBoxItem Content="Fallout 1" />
+                        </ComboBox>
+                        <TextBlock
+                            Grid.Row="1"
+                            VerticalAlignment="Center"
+                            Text="{loc:Loc settings.csvDelimiter}" />
+                        <ui:TextBox
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Width="60"
+                            HorizontalAlignment="Left"
+                            MaxLength="1"
+                            Text="{Binding CsvDelimiter, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+                    <TextBlock
+                        Margin="0,10,0,0"
+                        Style="{StaticResource FieldLabel}"
+                        Text="{loc:Loc settings.hexEditor}"
+                        ToolTip="{loc:Loc settings.hexEditorHint}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBox PlaceholderText="{loc:Loc settings.hexEditorHint}" Text="{Binding HexEditorPath, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                        <ui:Button
+                            Grid.Column="1"
+                            Margin="8,0,0,0"
+                            Command="{Binding BrowseHexEditorCommand}"
+                            Content="{loc:Loc common.browse}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+	
+</Page>

@@ -1,0 +1,65 @@
+<UserControl
+    x:Class="ProtoForge.UI.Controls.EntryPicker"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Grid>
+        <ui:TextBox
+            x:Name="Box"
+            ClearButtonEnabled="True"
+            GotKeyboardFocus="OnGotFocus"
+            PlaceholderText="{loc:Loc picker.placeholder}"
+            PreviewKeyDown="OnKeyDown"
+            TextChanged="OnTextChanged">
+            <ui:TextBox.Icon>
+                <ui:SymbolIcon Symbol="Search24" />
+            </ui:TextBox.Icon>
+        </ui:TextBox>
+        <Popup
+            x:Name="SuggestionsPopup"
+            Width="{Binding ActualWidth, ElementName=Box}"
+            AllowsTransparency="True"
+            Placement="Bottom"
+            PlacementTarget="{Binding ElementName=Box}"
+            StaysOpen="False">
+            <Border
+                Margin="4"
+                Padding="2"
+                Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+                Style="{StaticResource CardPanel}">
+                <Border.Effect>
+                    <DropShadowEffect
+                        BlurRadius="14"
+                        Opacity="0.4"
+                        ShadowDepth="2" />
+                </Border.Effect>
+                <ListBox
+                    x:Name="Suggestions"
+                    MaxHeight="300"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    PreviewMouseLeftButtonUp="OnSuggestionClicked">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    FontFamily="Consolas"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                    Text="{Binding Pid, Converter={StaticResource Pid}}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

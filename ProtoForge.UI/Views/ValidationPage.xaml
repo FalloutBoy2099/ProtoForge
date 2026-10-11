@@ -1,0 +1,164 @@
+<Page
+    x:Class="ProtoForge.UI.Views.ValidationPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Validation"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False">
+	
+    <Grid Margin="12,4,12,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitle}" Text="{loc:Loc validation.title}" />
+                <TextBlock
+                    Margin="0,4,0,0"
+                    Style="{StaticResource MutedText}"
+                    Text="{Binding Summary}" />
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <ui:Button
+                    Margin="0,0,6,0"
+                    Command="{Binding ExportReportCommand}"
+                    Content="{loc:Loc validation.export}">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ArrowExport24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+                <ui:Button
+                    Appearance="Primary"
+                    Command="{Binding RunCommand}"
+                    Content="{loc:Loc validation.run}">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="ShieldCheckmark24" />
+                    </ui:Button.Icon>
+                </ui:Button>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <ProgressBar
+                Height="3"
+                Margin="0,0,0,8"
+                Maximum="1"
+                Minimum="0"
+                Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}"
+                Value="{Binding Progress, Mode=OneWay}" />
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <ToggleButton
+                        Margin="0,0,6,0"
+                        Padding="10,4"
+                        IsChecked="{Binding ShowErrors, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon
+                                Margin="0,0,6,0"
+                                Foreground="#E84C4C"
+                                Symbol="ErrorCircle24" />
+                            <TextBlock FontWeight="SemiBold" Text="{Binding ErrorCount}" />
+                            <TextBlock Margin="6,0,0,0" Text="{loc:Loc validation.errors}" />
+                        </StackPanel>
+                    </ToggleButton>
+                    <ToggleButton
+                        Margin="0,0,6,0"
+                        Padding="10,4"
+                        IsChecked="{Binding ShowWarnings, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon
+                                Margin="0,0,6,0"
+                                Foreground="#F0A830"
+                                Symbol="Warning24" />
+                            <TextBlock FontWeight="SemiBold" Text="{Binding WarningCount}" />
+                            <TextBlock Margin="6,0,0,0" Text="{loc:Loc validation.warnings}" />
+                        </StackPanel>
+                    </ToggleButton>
+                    <ToggleButton
+                        Margin="0,0,12,0"
+                        Padding="10,4"
+                        IsChecked="{Binding ShowInfo, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon
+                                Margin="0,0,6,0"
+                                Foreground="#5BA7E8"
+                                Symbol="Info24" />
+                            <TextBlock FontWeight="SemiBold" Text="{Binding InfoCount}" />
+                            <TextBlock Margin="6,0,0,0" Text="{loc:Loc validation.infos}" />
+                        </StackPanel>
+                    </ToggleButton>
+                </StackPanel>
+                <ui:TextBox
+                    ClearButtonEnabled="True"
+                    PlaceholderText="{loc:Loc validation.filter}"
+                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+            </DockPanel>
+        </StackPanel>
+
+        <ui:DataGrid
+            Grid.Row="2"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            EnableRowVirtualization="True"
+            GridLinesVisibility="None"
+            HeadersVisibility="Column"
+            IsReadOnly="True"
+            ItemsSource="{Binding View}"
+            MouseDoubleClick="OnRowDoubleClick"
+            SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+            SelectionMode="Single"
+            VirtualizingPanel.IsVirtualizing="True"
+            VirtualizingPanel.VirtualizationMode="Recycling">
+            <ui:DataGrid.Columns>
+                <DataGridTemplateColumn Width="36" Header="">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ui:SymbolIcon
+                                HorizontalAlignment="Center"
+                                FontSize="16"
+                                Foreground="{Binding Severity, Converter={StaticResource SeverityBrush}}"
+                                Symbol="{Binding Severity, Converter={StaticResource SeverityIcon}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn
+                    Width="100"
+                    Binding="{Binding PidText}"
+                    ElementStyle="{StaticResource CellText}"
+                    Header="PID" />
+                <DataGridTextColumn
+                    Width="180"
+                    Binding="{Binding EntryName}"
+                    ElementStyle="{StaticResource CellText}"
+                    Header="{loc:Loc col.name}" />
+                <DataGridTextColumn
+                    Width="150"
+                    Binding="{Binding FieldLabel}"
+                    ElementStyle="{StaticResource CellText}"
+                    Header="{loc:Loc validation.field}" />
+                <DataGridTextColumn
+                    Width="*"
+                    Binding="{Binding Message}"
+                    Header="{loc:Loc validation.message}" />
+                <DataGridTextColumn
+                    Width="110"
+                    Binding="{Binding Rule}"
+                    ElementStyle="{StaticResource CellText}"
+                    Header="{loc:Loc validation.rule}" />
+            </ui:DataGrid.Columns>
+        </ui:DataGrid>
+    </Grid>
+	
+</Page>

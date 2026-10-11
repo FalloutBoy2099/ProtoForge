@@ -1,0 +1,389 @@
+<Page
+    x:Class="ProtoForge.UI.Views.AiPacketsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:ProtoForge.UI.ViewModels"
+    Title="AI packets"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False">
+
+    <Page.Resources>
+        <Style
+            x:Key="CompactListItem"
+            BasedOn="{StaticResource {x:Type ListBoxItem}}"
+            TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <!--  One parameter: number box, keyword list or editable keyword list  -->
+        <DataTemplate DataType="{x:Type vm:AiParameterViewModel}">
+            <StackPanel
+                Width="190"
+                Margin="0,0,8,5"
+                ToolTip="{Binding Key}">
+                <TextBlock
+                    Style="{StaticResource FieldLabel}"
+                    Text="{Binding Label}"
+                    TextTrimming="CharacterEllipsis" />
+                <ui:NumberBox
+                    AutomationProperties.Name="{Binding Label}"
+                    ClearButtonEnabled="False"
+                    MaxDecimalPlaces="0"
+                    Maximum="{Binding Maximum}"
+                    Minimum="{Binding Minimum}"
+                    SpinButtonPlacementMode="Hidden"
+                    Visibility="{Binding IsNumber, Converter={StaticResource BoolToVisibility}}"
+                    Value="{Binding Number, Mode=TwoWay}" />
+                <ComboBox
+                    HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="{Binding Label}"
+                    DisplayMemberPath="Label"
+                    ItemsSource="{Binding Choices}"
+                    MaxDropDownHeight="360"
+                    SelectedValue="{Binding Value, Mode=TwoWay}"
+                    SelectedValuePath="Value"
+                    Visibility="{Binding IsChoice, Converter={StaticResource BoolToVisibility}}" />
+                <ComboBox
+                    HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="{Binding Label}"
+                    DisplayMemberPath="Label"
+                    IsEditable="True"
+                    ItemsSource="{Binding Choices}"
+                    Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                    ToolTip="{loc:Loc ai.multiHint}"
+                    Visibility="{Binding IsMultiChoice, Converter={StaticResource BoolToVisibility}}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!--  A group of parameters  -->
+        <DataTemplate DataType="{x:Type vm:AiParameterGroupViewModel}">
+            <ui:CardExpander
+                Margin="0,0,0,6"
+                ContentPadding="10,8,10,2"
+                IsExpanded="True">
+                <ui:CardExpander.Header>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="{Binding Header}" />
+                </ui:CardExpander.Header>
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ui:CardExpander>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid Margin="12,4,12,8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="12" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  Packet list  -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock
+                Margin="0,0,0,8"
+                Style="{StaticResource PageTitle}"
+                Text="{loc:Loc ai.title}" />
+            <DockPanel
+                Grid.Row="1"
+                Margin="0,0,0,8"
+                LastChildFill="True">
+                <ui:Button
+                    Margin="4,0,0,0"
+                    AutomationProperties.Name="{loc:Loc ai.closeCustom}"
+                    Command="{Binding CloseCustomFileCommand}"
+                    DockPanel.Dock="Right"
+                    ToolTip="{loc:Loc ai.closeCustom}"
+                    Visibility="{Binding IsCustomFile, Converter={StaticResource BoolToVisibility}}">
+                    <ui:SymbolIcon Symbol="Dismiss24" />
+                </ui:Button>
+                <ui:Button
+                    Margin="4,0,0,0"
+                    AutomationProperties.Name="{loc:Loc ai.openCustom}"
+                    Command="{Binding OpenCustomFileCommand}"
+                    DockPanel.Dock="Right"
+                    IsEnabled="{Binding HasWorkspace}"
+                    ToolTip="{loc:Loc ai.openCustom}">
+                    <ui:SymbolIcon Symbol="FolderOpen24" />
+                </ui:Button>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Style="{StaticResource MutedText}"
+                    Text="{Binding FileLabel}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTip="{Binding FileLabel}" />
+            </DockPanel>
+            <ui:TextBox
+                Grid.Row="2"
+                Margin="0,0,0,8"
+                ClearButtonEnabled="True"
+                PlaceholderText="{loc:Loc ai.filter}"
+                Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+            <ListBox
+                Grid.Row="3"
+                DisplayMemberPath="DisplayName"
+                ItemContainerStyle="{StaticResource CompactListItem}"
+                ItemsSource="{Binding Packets}"
+                SelectedItem="{Binding Selected, Mode=TwoWay}"
+                VirtualizingPanel.IsVirtualizing="True" />
+            <Grid Grid.Row="4" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Style="{StaticResource MutedText}"
+                    Text="{Binding Summary}" />
+                <ui:Button
+                    Grid.Column="1"
+                    Margin="0,0,4,0"
+                    AutomationProperties.Name="{loc:Loc ai.add}"
+                    Command="{Binding AddPacketCommand}"
+                    IsEnabled="{Binding HasWorkspace}"
+                    ToolTip="{loc:Loc ai.add}">
+                    <ui:SymbolIcon Symbol="Add24" />
+                </ui:Button>
+                <ui:Button
+                    Grid.Column="2"
+                    AutomationProperties.Name="{loc:Loc ai.remove}"
+                    Command="{Binding RemovePacketCommand}"
+                    ToolTip="{loc:Loc ai.remove}">
+                    <ui:SymbolIcon Symbol="Delete24" />
+                </ui:Button>
+            </Grid>
+        </Grid>
+
+        <!--  Editor  -->
+        <ScrollViewer
+            Grid.Column="2"
+            Padding="0,0,8,0"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Visibility="{Binding Selected, Converter={StaticResource VisibleWhen}}">
+                <Border
+                    Margin="0,0,0,6"
+                    Padding="10,8"
+                    Style="{StaticResource CardPanel}">
+                    <StackPanel>
+                        <TextBlock
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Text="{Binding Selected.DisplayName}" />
+                        <TextBlock
+                            FontSize="12"
+                            Style="{StaticResource MutedText}"
+                            Text="{loc:Loc ai.editHint}" />
+                    </StackPanel>
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding Groups}" />
+
+                <!--  Preferred drugs  -->
+                <ui:CardExpander
+                    Margin="0,0,0,6"
+                    ContentPadding="10,8,10,8"
+                    IsExpanded="True">
+                    <ui:CardExpander.Header>
+                        <TextBlock
+                            Style="{StaticResource SectionTitle}"
+                            Text="{loc:Loc ai.drugs}"
+                            ToolTip="{loc:Loc ai.drugsTip}" />
+                    </ui:CardExpander.Header>
+                    <StackPanel>
+                        <ListBox
+                            MinHeight="26"
+                            MaxHeight="96"
+                            Margin="0,0,0,6"
+                            DisplayMemberPath="Label"
+                            ItemContainerStyle="{StaticResource CompactListItem}"
+                            ItemsSource="{Binding Drugs}"
+                            SelectedItem="{Binding SelectedDrug, Mode=TwoWay}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox
+                                AutomationProperties.Name="{loc:Loc ai.drugs}"
+                                DisplayMemberPath="Label"
+                                ItemsSource="{Binding DrugOptions}"
+                                MaxDropDownHeight="320"
+                                SelectedItem="{Binding DrugToAdd, Mode=TwoWay}">
+                                <ComboBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel />
+                                    </ItemsPanelTemplate>
+                                </ComboBox.ItemsPanel>
+                            </ComboBox>
+                            <ui:Button
+                                Grid.Column="2"
+                                Command="{Binding AddDrugCommand}"
+                                Content="{loc:Loc ai.drugAdd}" />
+                            <ui:Button
+                                Grid.Column="3"
+                                Margin="4,0,0,0"
+                                AutomationProperties.Name="{loc:Loc cmd.delete}"
+                                Command="{Binding RemoveDrugCommand}"
+                                ToolTip="{loc:Loc cmd.delete}">
+                                <ui:SymbolIcon Symbol="Delete24" />
+                            </ui:Button>
+                            <ui:Button
+                                Grid.Column="4"
+                                Margin="4,0,0,0"
+                                AutomationProperties.Name="{loc:Loc ai.moveUp}"
+                                Command="{Binding MoveDrugUpCommand}"
+                                ToolTip="{loc:Loc ai.moveUp}">
+                                <ui:SymbolIcon Symbol="ArrowUp24" />
+                            </ui:Button>
+                            <ui:Button
+                                Grid.Column="5"
+                                Margin="4,0,0,0"
+                                AutomationProperties.Name="{loc:Loc ai.moveDown}"
+                                Command="{Binding MoveDrugDownCommand}"
+                                ToolTip="{loc:Loc ai.moveDown}">
+                                <ui:SymbolIcon Symbol="ArrowDown24" />
+                            </ui:Button>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
+
+                <!--  Parameters without a dedicated editor  -->
+                <ui:CardExpander
+                    Margin="0,0,0,6"
+                    ContentPadding="10,8,10,2"
+                    IsExpanded="False"
+                    Visibility="{Binding OtherParameters.Count, Converter={StaticResource VisibleWhen}}">
+                    <ui:CardExpander.Header>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="{loc:Loc ai.other}" />
+                    </ui:CardExpander.Header>
+                    <ItemsControl ItemsSource="{Binding OtherParameters}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding Key}" />
+                                    <ui:TextBox Grid.Column="1" Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ui:CardExpander>
+
+                <!--  Raw text of the packet  -->
+                <ui:CardExpander
+                    Margin="0,0,0,6"
+                    ContentPadding="10,8,10,8"
+                    IsExpanded="False">
+                    <ui:CardExpander.Header>
+                        <TextBlock
+                            Style="{StaticResource SectionTitle}"
+                            Text="{loc:Loc ai.rawText}"
+                            ToolTip="{loc:Loc ai.rawTip}" />
+                    </ui:CardExpander.Header>
+                    <StackPanel>
+                        <TextBox
+                            AcceptsReturn="True"
+                            AcceptsTab="False"
+                            AutomationProperties.Name="{loc:Loc ai.rawText}"
+                            FontFamily="Consolas"
+                            HorizontalScrollBarVisibility="Auto"
+                            MaxLines="18"
+                            MinLines="8"
+                            Text="{Binding RawText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TextWrapping="NoWrap"
+                            VerticalScrollBarVisibility="Auto" />
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Appearance="Primary"
+                                Command="{Binding ApplyRawTextCommand}"
+                                Content="{loc:Loc ai.rawApply}" />
+                            <ui:Button Command="{Binding ResetRawTextCommand}" Content="{loc:Loc ai.rawReset}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ui:CardExpander>
+
+                <!--  Critters using the packet  -->
+                <ui:CardExpander
+                    Margin="0,0,0,6"
+                    ContentPadding="10,8,10,8"
+                    IsExpanded="False">
+                    <ui:CardExpander.Header>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="{loc:Loc ai.usedBy}" />
+                    </ui:CardExpander.Header>
+                    <ListBox
+                        MaxHeight="220"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        ItemContainerStyle="{StaticResource CompactListItem}"
+                        ItemsSource="{Binding Users}"
+                        MouseDoubleClick="OnUserDoubleClick"
+                        SelectedItem="{Binding SelectedUser, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding DisplayName}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontFamily="Consolas"
+                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                        Text="{Binding Pid, Converter={StaticResource Pid}}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </ui:CardExpander>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel
+            Grid.Column="2"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="{Binding Selected, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+            <ui:SymbolIcon
+                HorizontalAlignment="Center"
+                FontSize="42"
+                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                Symbol="Bot24" />
+            <TextBlock
+                Margin="0,12,0,0"
+                HorizontalAlignment="Center"
+                Style="{StaticResource MutedText}"
+                Text="{loc:Loc ai.nothing}" />
+        </StackPanel>
+    </Grid>
+
+</Page>
