@@ -35,6 +35,27 @@
             </Setter>
         </Style>
 
+        <!--  A small flat button of the bar (clear, save)  -->
+        <Style x:Key="BarGlyphButton" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border
+                            x:Name="Root"
+                            Background="Transparent"
+                            CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="SearchFrame" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
@@ -132,50 +153,58 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <Button
-                    x:Name="ClearButton"
-                    Grid.Column="2"
-                    Width="24"
-                    Height="22"
-                    Margin="0,0,3,0"
-                    AutomationProperties.Name="{loc:Loc search.clear}"
-                    Click="OnClearClick"
-                    Focusable="False"
-                    ToolTip="{loc:Loc search.clear}">
-                    <Button.Style>
-                        <Style TargetType="Button">
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
                             <Setter Property="Visibility" Value="Collapsed" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border
-                                            x:Name="Root"
-                                            Background="Transparent"
-                                            CornerRadius="3">
-                                            <TextBlock
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                FontFamily="{StaticResource SearchIconFont}"
-                                                FontSize="10"
-                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                Text="&#xE711;" />
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Text, ElementName=Input, Converter={StaticResource NotEmpty}}" Value="True">
                                     <Setter Property="Visibility" Value="Visible" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </Button.Style>
-                </Button>
+                    </StackPanel.Style>
+                    <TextBlock
+                        x:Name="ResultText"
+                        Margin="0,0,6,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        IsHitTestVisible="False"
+                        ToolTip="{loc:Loc search.results}" />
+                    <Button
+                        x:Name="StarButton"
+                        Width="24"
+                        Height="22"
+                        AutomationProperties.Name="{loc:Loc search.save}"
+                        Click="OnStarClick"
+                        Focusable="False"
+                        Style="{StaticResource BarGlyphButton}"
+                        ToolTip="{loc:Loc search.save}">
+                        <TextBlock
+                            x:Name="StarGlyph"
+                            FontFamily="{StaticResource SearchIconFont}"
+                            FontSize="11"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="&#xE734;" />
+                    </Button>
+                    <Button
+                        x:Name="ClearButton"
+                        Width="24"
+                        Height="22"
+                        Margin="0,0,3,0"
+                        AutomationProperties.Name="{loc:Loc search.clear}"
+                        Click="OnClearClick"
+                        Focusable="False"
+                        Style="{StaticResource BarGlyphButton}"
+                        ToolTip="{loc:Loc search.clear}">
+                        <TextBlock
+                            FontFamily="{StaticResource SearchIconFont}"
+                            FontSize="10"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="&#xE711;" />
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 

@@ -75,7 +75,7 @@ namespace ProtoForge.UI.Services
 			}
 			catch (Exception ex) when (ex is System.IO.IOException or System.IO.InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
 			{
-				_notifier.Error(Loc.Get("open.failed"), ex.Message);
+				_notifier.Error(Loc.Get("open.failed"), ProtoForge.Core.UserTexts.Describe(ex));
 				return false;
 			}
 		}
@@ -116,6 +116,20 @@ namespace ProtoForge.UI.Services
 			}
 		}
 
+		private readonly HashSet<String> _confirmedOutputs = new(StringComparer.OrdinalIgnoreCase);
+
+		private static Boolean IsInsideGameFolder(GameWorkspace workspace, String outputFolder)
+		{
+			String? game = workspace.Layout.GameFolder;
+			if (String.IsNullOrEmpty(game))
+			{
+				return false;
+			}
+
+			String root = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(game)) + System.IO.Path.DirectorySeparatorChar;
+			return (outputFolder + System.IO.Path.DirectorySeparatorChar).StartsWith(root, StringComparison.OrdinalIgnoreCase);
+		}
+
 		public async Task<Boolean> OpenAsync(GameLayout layout, IEnumerable<String>? messages = null, Boolean confirmClose = true)
 		{
 			if (confirmClose && !await ConfirmCloseAsync())
@@ -148,7 +162,7 @@ namespace ProtoForge.UI.Services
 			}
 			catch (Exception ex) when (ex is System.IO.IOException or System.IO.InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
 			{
-				_notifier.Error(Loc.Get("open.failed"), ex.Message);
+				_notifier.Error(Loc.Get("open.failed"), ProtoForge.Core.UserTexts.Describe(ex));
 				return false;
 			}
 			finally
@@ -224,13 +238,19 @@ namespace ProtoForge.UI.Services
 				return true;
 			}
 
-			if (_settings.Current.ConfirmBeforeSave)
+			// Writing inside the game folder itself is the one save that deserves a look even for someone who switched the question off:
+			// it is asked once per session and output folder.
+			String outputKey = System.IO.Path.GetFullPath(plan.OutputFolder);
+			Boolean insideGame = IsInsideGameFolder(workspace, outputKey);
+			if (_settings.Current.ConfirmBeforeSave || (insideGame && !_confirmedOutputs.Contains(outputKey)))
 			{
-				SavePlanView view = new(plan, workspace.Options.BackupBeforeSave);
+				SavePlanView view = new(plan, workspace.Options.BackupBeforeSave, insideGame ? Loc.Get("save.warnGameFolder") : null);
 				if (!await _dialogs.ShowAsync(Loc.Get("save.confirmTitle"), view, Loc.Get("save.confirmButton"), Loc.Get("common.cancel")))
 				{
 					return false;
 				}
+
+				_confirmedOutputs.Add(outputKey);
 			}
 
 			IsBusy = true;

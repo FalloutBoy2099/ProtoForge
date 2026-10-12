@@ -254,7 +254,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException)
 			{
-				_notifier.Error(Loc.Get("kind.changeTitle"), ex.Message);
+				_notifier.Error(Loc.Get("kind.changeTitle"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 
@@ -349,7 +349,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException)
 			{
-				_notifier.Error(Loc.Get("template.saveTitle"), ex.Message);
+				_notifier.Error(Loc.Get("template.saveTitle"), ProtoForge.Core.UserTexts.Describe(ex));
 				return;
 			}
 
@@ -493,7 +493,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is System.IO.IOException or System.IO.InvalidDataException or UnauthorizedAccessException or ArgumentOutOfRangeException)
 			{
-				_notifier.Error(Loc.Get("image.saveTitle"), ex.Message);
+				_notifier.Error(Loc.Get("image.saveTitle"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 

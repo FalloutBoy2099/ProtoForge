@@ -343,6 +343,7 @@
                             <MenuItem Command="{Binding Editor.RestoreOriginalCommand}" Header="{loc:Loc edit.restoreOriginal}" />
                             <MenuItem Command="{Binding Editor.RemoveOverrideCommand}" Header="{loc:Loc edit.removeOverride}" />
                             <Separator />
+                            <MenuItem Command="{Binding CompareWithVanillaCommand}" Header="{loc:Loc cmd.compareVanilla}" />
                             <MenuItem Command="{Binding CompareSelectedCommand}" Header="{loc:Loc cmd.compareSelected}" />
                             <MenuItem Command="{Binding CopyPidCommand}" Header="{loc:Loc cmd.copyPid}" />
                             <Separator />

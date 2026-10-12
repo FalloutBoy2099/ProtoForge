@@ -249,4 +249,18 @@ namespace ProtoForge.UI.Converters
 			throw new NotSupportedException();
 		}
 	}
+
+	/// <summary>Visible when a text is not empty, collapsed otherwise.</summary>
+	public sealed class NotEmptyVisibleConverter : IValueConverter
+	{
+		public Object Convert(Object? value, Type targetType, Object? parameter, CultureInfo culture)
+		{
+			return value is String { Length: > 0 } ? Visibility.Visible : Visibility.Collapsed;
+		}
+
+		public Object ConvertBack(Object? value, Type targetType, Object? parameter, CultureInfo culture)
+		{
+			throw new NotSupportedException();
+		}
+	}
 }

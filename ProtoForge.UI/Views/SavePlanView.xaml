@@ -9,6 +9,13 @@
     <StackPanel Width="620">
         <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
         <TextBlock
+            Margin="0,4,0,0"
+            FontSize="12"
+            Foreground="{DynamicResource SystemFillColorCautionBrush}"
+            Text="{Binding Warning}"
+            TextWrapping="Wrap"
+            Visibility="{Binding Warning, Converter={StaticResource NotEmptyVisible}}" />
+        <TextBlock
             Margin="0,4,0,10"
             FontSize="12"
             Style="{StaticResource MutedText}">

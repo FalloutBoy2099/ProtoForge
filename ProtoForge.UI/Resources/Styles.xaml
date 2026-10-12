@@ -136,6 +136,7 @@
     <conv:EntryAttributesConverter x:Key="EntryAttributes" />
     <conv:InverseBooleanConverter x:Key="InverseBool" />
     <conv:NotEmptyConverter x:Key="NotEmpty" />
+    <conv:NotEmptyVisibleConverter x:Key="NotEmptyVisible" />
 
     <!--  Scroll bars: a thumb never shorter than 50 pixels (with thousands of rows it would shrink to a dot)  -->
     <Style x:Key="ScrollPageButton" TargetType="RepeatButton">

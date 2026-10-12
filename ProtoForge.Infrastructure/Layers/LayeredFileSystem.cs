@@ -1,5 +1,6 @@
 namespace ProtoForge.Infrastructure.Layers
 {
+	using ProtoForge.Core;
 	using System;
 	using System.Collections.Generic;
 	using System.Linq;

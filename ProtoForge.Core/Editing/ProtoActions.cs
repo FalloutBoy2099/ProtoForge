@@ -130,7 +130,7 @@ namespace ProtoForge.Core.Editing
 
 		public String Description
 		{
-			get { return "Edit text"; }
+			get { return UserTexts.Format("act.editText", "Edit text"); }
 		}
 
 		public void Do()
@@ -166,7 +166,7 @@ namespace ProtoForge.Core.Editing
 		public ReplaceFileAction(ProtoEntry entry, ProtoFile newFile, String description)
 		{
 			_entry = entry;
-			_oldFile = entry.File?.Clone() ?? throw new InvalidOperationException("The prototype has no content to replace.");
+			_oldFile = entry.File?.Clone() ?? throw new InvalidOperationException(UserTexts.Format("err.noContentReplace", "The prototype has no content to replace."));
 			_newFile = newFile;
 			Description = description;
 		}
@@ -203,7 +203,7 @@ namespace ProtoForge.Core.Editing
 			_entry = entry;
 			_fallback = fallback;
 			_fallbackSource = fallbackSource;
-			_oldFile = entry.File?.Clone() ?? throw new InvalidOperationException("The prototype has no content.");
+			_oldFile = entry.File?.Clone() ?? throw new InvalidOperationException(UserTexts.Format("err.noContent", "The prototype has no content."));
 			_oldSource = entry.SourceName;
 			_wasPending = entry.PendingOverrideRemoval;
 			_oldFallback = entry.OverrideFallback;
@@ -294,7 +294,7 @@ namespace ProtoForge.Core.Editing
 			IReadOnlyList<ProtoEntry> list = _catalog.GetEntries(_type);
 			if (list.Count == 0 || !ReferenceEquals(list[^1], Entry))
 			{
-				throw new InvalidOperationException("Another prototype was added after this one; undo them first.");
+				throw new InvalidOperationException(UserTexts.Format("err.laterAdded", "Another prototype was added after this one; undo them first."));
 			}
 
 			_catalog.RemoveLast(_type);
@@ -345,7 +345,7 @@ namespace ProtoForge.Core.Editing
 			IReadOnlyList<ProtoEntry> list = _catalog.GetEntries(_entry.Type);
 			if (list.Count == 0 || !ReferenceEquals(list[^1], _entry))
 			{
-				throw new InvalidOperationException("Only the last prototype of a list can be removed.");
+				throw new InvalidOperationException(UserTexts.Format("err.onlyLastRemove", "Only the last prototype of a list can be removed."));
 			}
 
 			_catalog.RemoveLast(_entry.Type);

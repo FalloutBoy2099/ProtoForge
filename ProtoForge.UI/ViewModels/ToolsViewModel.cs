@@ -124,6 +124,7 @@ namespace ProtoForge.UI.ViewModels
 				.. ProtoObjectTypeExtensions.All.Select(t => new ExportScope(t.ToString(), Loc.Get("type." + t))),
 			];
 			_selectedScope = Scopes[0];
+			_replaceScope = ReplaceScopes[0];
 			Materials = new ChoiceCatalog().Get(ChoiceCatalog.Material);
 			AddArtKinds =
 			[
@@ -257,7 +258,7 @@ namespace ProtoForge.UI.ViewModels
 			{
 				Int32 index = first + i;
 				ProtoFile file = CreateMassFile(kind, index, endOfGroup && i == created - 1 ? EndOfGroupTileArt : art + i);
-				actions.Add(new AddProtoAction(workspace.Catalog, workspace.Texts, type, file, ProtoDuplicator.FormatFileName(index), workspace.OutputSourceName, String.Empty, String.Empty, "Create"));
+				actions.Add(new AddProtoAction(workspace.Catalog, workspace.Texts, type, file, ProtoDuplicator.FormatFileName(index), workspace.OutputSourceName, String.Empty, String.Empty, ProtoForge.Core.UserTexts.Format("act.createShort", "Create")));
 			}
 
 			using (workspace.Catalog.SuspendNotifications())
@@ -331,7 +332,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("tools.mass"), ex.Message);
+				_notifier.Error(Loc.Get("tools.mass"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 
@@ -359,7 +360,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("art.convert"), ex.Message);
+				_notifier.Error(Loc.Get("art.convert"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 
@@ -405,7 +406,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("art.add"), ex.Message);
+				_notifier.Error(Loc.Get("art.add"), ProtoForge.Core.UserTexts.Describe(ex));
 				return;
 			}
 
@@ -440,7 +441,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (InvalidOperationException ex)
 			{
-				_notifier.Error(Loc.Get("art.add"), ex.Message);
+				_notifier.Error(Loc.Get("art.add"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 
@@ -520,7 +521,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("art.extract"), ex.Message);
+				_notifier.Error(Loc.Get("art.extract"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 			finally
 			{
@@ -615,7 +616,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
 			{
-				_notifier.Error(Loc.Get("tools.title"), ex.Message);
+				_notifier.Error(Loc.Get("tools.title"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 	}

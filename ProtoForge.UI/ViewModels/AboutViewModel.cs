@@ -124,7 +124,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
 			{
-				_notifier.Error(Loc.Get("about.updates"), ex.Message);
+				_notifier.Error(Loc.Get("about.updates"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 

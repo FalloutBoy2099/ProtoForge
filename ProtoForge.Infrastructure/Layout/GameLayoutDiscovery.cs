@@ -1,5 +1,6 @@
 namespace ProtoForge.Infrastructure.Layout
 {
+	using ProtoForge.Core;
 	using System;
 	using System.Collections.Generic;
 	using System.Globalization;

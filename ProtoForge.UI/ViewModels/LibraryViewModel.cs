@@ -192,6 +192,11 @@ namespace ProtoForge.UI.ViewModels
 			UpdateTemplates();
 		}
 
+		partial void OnShownCountChanged(Int32 value)
+		{
+			Main.SearchResultCount = value;
+		}
+
 		private const Int32 PrefetchBefore = 3;
 		private const Int32 PrefetchAfter = 8;
 
@@ -231,6 +236,7 @@ namespace ProtoForge.UI.ViewModels
 			DuplicateCommand.NotifyCanExecuteChanged();
 			DeleteCommand.NotifyCanExecuteChanged();
 			CompareSelectedCommand.NotifyCanExecuteChanged();
+			CompareWithVanillaCommand.NotifyCanExecuteChanged();
 			ExportSelectionJsonCommand.NotifyCanExecuteChanged();
 			ExportSelectionCsvCommand.NotifyCanExecuteChanged();
 		}
@@ -390,6 +396,21 @@ namespace ProtoForge.UI.ViewModels
 		private Boolean HasTwoSelected()
 		{
 			return Editor is { Selection.Count: 2 };
+		}
+
+		private Boolean HasOneSelected()
+		{
+			return Editor is { Selection.Count: 1 };
+		}
+
+		/// <summary>Opens the comparison of the selected prototype with the one of the original game.</summary>
+		[RelayCommand(CanExecute = nameof(HasOneSelected))]
+		private void CompareWithVanilla()
+		{
+			if (Editor is { Selection.Count: 1 } editor)
+			{
+				_shell.CompareWithVanilla(editor.Selection[0]);
+			}
 		}
 
 		[RelayCommand(CanExecute = nameof(HasTwoSelected))]

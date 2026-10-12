@@ -236,7 +236,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("validation.title"), ex.Message);
+				_notifier.Error(Loc.Get("validation.title"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 

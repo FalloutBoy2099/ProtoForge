@@ -64,7 +64,7 @@ namespace ProtoForge.Core.Editing
 			_file = file;
 			_name = name;
 			_lines = lines;
-			Description = $"Add AI packet {name}";
+			Description = UserTexts.Format("act.addAiPacket", "Add AI packet {0}", name);
 		}
 
 		public String Description { get; }
@@ -99,7 +99,7 @@ namespace ProtoForge.Core.Editing
 		{
 			_file = file;
 			_section = section;
-			Description = $"Delete AI packet {section.Name}";
+			Description = UserTexts.Format("act.deleteAiPacket", "Delete AI packet {0}", section.Name);
 		}
 
 		public String Description { get; }
@@ -132,7 +132,7 @@ namespace ProtoForge.Core.Editing
 			_section = section;
 			_oldText = file.GetRawText(section);
 			_newText = newText;
-			Description = $"Edit AI packet {section}";
+			Description = UserTexts.Format("act.editAiPacket", "Edit AI packet {0}", section);
 		}
 
 		public String Description { get; }

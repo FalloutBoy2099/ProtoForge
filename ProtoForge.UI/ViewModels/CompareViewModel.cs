@@ -112,6 +112,8 @@ namespace ProtoForge.UI.ViewModels
 		private readonly WorkspaceService _workspaceService;
 		private readonly ArtImageService _art;
 		private readonly SettingsService _settings;
+		private readonly IDialogService _dialogs;
+		private readonly INotifier _notifier;
 		private Boolean _updating;
 
 		[ObservableProperty]
@@ -126,8 +128,10 @@ namespace ProtoForge.UI.ViewModels
 		[ObservableProperty]
 		private IReadOnlyList<ProtoEntry> _entries = [];
 
-		public CompareViewModel(WorkspaceService workspaceService, ArtImageService art, SettingsService settings)
+		public CompareViewModel(WorkspaceService workspaceService, ArtImageService art, SettingsService settings, IDialogService dialogs, INotifier notifier)
 		{
+			_dialogs = dialogs;
+			_notifier = notifier;
 			_workspaceService = workspaceService;
 			_art = art;
 			_settings = settings;
@@ -230,6 +234,67 @@ namespace ProtoForge.UI.ViewModels
 			Right.Version = other.Right.Version;
 			_updating = false;
 			Rebuild();
+		}
+
+		/// <summary>Writes the differences of the two sides to a file (Markdown or CSV, by the extension the user picks).</summary>
+		[RelayCommand]
+		private void ExportReport()
+		{
+			List<CompareRow> rows = [.. (RowsView?.SourceCollection as IEnumerable<CompareRow> ?? []).Where(r => r.IsDifferent)];
+			if (rows.Count == 0)
+			{
+				_notifier.Info(Loc.Get("compare.export"), Loc.Get("compare.exportNothing"));
+				return;
+			}
+
+			String? path = _dialogs.PickSaveFile(Loc.Get("compare.export"), "Markdown (*.md)|*.md|CSV (*.csv)|*.csv", "comparison.md");
+			if (path is null)
+			{
+				return;
+			}
+
+			System.Text.StringBuilder text = new();
+			Boolean csv = path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase);
+			if (csv)
+			{
+				text.AppendLine("Group;Field;" + Quote(Left.Title) + ";" + Quote(Right.Title));
+				foreach (CompareRow row in rows)
+				{
+					text.AppendLine($"{Quote(row.GroupLabel)};{Quote(row.Label)};{Quote(row.ValueA)};{Quote(row.ValueB)}");
+				}
+			}
+			else
+			{
+				text.AppendLine($"# {Left.Title} / {Right.Title}").AppendLine();
+				text.AppendLine($"| | {Loc.Get("compare.field")} | {Left.Title} | {Right.Title} |").AppendLine("|---|---|---|---|");
+				foreach (CompareRow row in rows)
+				{
+					text.AppendLine($"| {Cell(row.GroupLabel)} | {Cell(row.Label)} | {Cell(row.ValueA)} | {Cell(row.ValueB)} |");
+				}
+			}
+
+			try
+			{
+				System.IO.File.WriteAllText(path, text.ToString(), new System.Text.UTF8Encoding(csv));
+				_notifier.Success(Loc.Get("compare.export"), Loc.Format("compare.exported", rows.Count, System.IO.Path.GetFileName(path)));
+			}
+			catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+			{
+				_notifier.Error(Loc.Get("compare.export"), ProtoForge.Core.UserTexts.Describe(ex));
+			}
+		}
+
+		private static String Quote(String value)
+		{
+			// A cell that could be read as a formula is written as text (spreadsheets run formulas of a CSV file).
+			Boolean formula = value.Length > 0 && (value[0] is '=' or '+' or '@' || (value[0] == '-' && value.Length > 1 && !Char.IsDigit(value[1])));
+			String safe = formula ? "'" + value : value;
+			return "\"" + safe.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+		}
+
+		private static String Cell(String value)
+		{
+			return value.Replace("|", "\\|", StringComparison.Ordinal).Replace("\r", String.Empty, StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
 		}
 
 		[RelayCommand]

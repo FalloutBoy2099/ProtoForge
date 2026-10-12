@@ -11,7 +11,7 @@ namespace ProtoForge.Core.Tests
 	/// <summary>Guards the UI translations: both languages define the same keys and every key used in code or XAML exists.</summary>
 	public partial class LocalizationTests
 	{
-		private static readonly String[] DynamicPrefixes = ["category.", "issue.", "kind.", "layer.role.", "template.", "theme.", "tip.", "type.", "choice.", "ai.group.", "ai.param."];
+		private static readonly String[] DynamicPrefixes = ["category.", "issue.", "kind.", "layer.role.", "template.", "theme.", "tip.", "type.", "choice.", "ai.group.", "ai.param.", "field."];
 
 		private static String FindUiFolder()
 		{
@@ -68,10 +68,14 @@ namespace ProtoForge.Core.Tests
 		{
 			HashSet<String> en = [.. Load("en").Keys];
 			HashSet<String> used = [];
-			foreach (String file in Directory.EnumerateFiles(FindUiFolder(), "*.*", SearchOption.AllDirectories)
+			String root = Path.GetDirectoryName(FindUiFolder())!;
+			foreach (String file in new[] { "ProtoForge.UI", "ProtoForge.Infrastructure", "ProtoForge.Core" }
+				.SelectMany(project => Directory.EnumerateFiles(Path.Combine(root, project), "*.*", SearchOption.AllDirectories))
 				.Where(f => (f.EndsWith(".cs", StringComparison.Ordinal) || f.EndsWith(".xaml", StringComparison.Ordinal))
 					&& !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-					&& !f.EndsWith("Loc.cs", StringComparison.Ordinal)))
+					&& !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+					&& !f.EndsWith("Loc.cs", StringComparison.Ordinal)
+					&& !f.EndsWith("UserTexts.cs", StringComparison.Ordinal)))
 			{
 				String text = File.ReadAllText(file);
 				foreach (Match match in CodeKey().Matches(text))
@@ -89,7 +93,7 @@ namespace ProtoForge.Core.Tests
 			Assert.True(missing.Count == 0, "Undefined keys: " + String.Join(", ", missing));
 		}
 
-		[GeneratedRegex("Loc\\.(?:Get|Format|Has)\\(\"([^\"]+)\"")]
+		[GeneratedRegex("(?:Loc\\.(?:Get|Format|Has)|UserTexts\\.Format)\\(\"([^\"]+)\"")]
 		private static partial Regex CodeKey();
 
 		[GeneratedRegex("\\{loc:Loc ([A-Za-z0-9_.]+)\\}")]

@@ -30,6 +30,9 @@ namespace ProtoForge.Infrastructure.Settings
 		/// <summary>The latest searches of the title bar, newest first.</summary>
 		public List<String> RecentSearches { get; set; } = [];
 
+		/// <summary>The searches the user kept (star button of the search box).</summary>
+		public List<String> SavedSearches { get; set; } = [];
+
 		/// <summary>Game folder used as the vanilla base when opening a mod folder or a DAT archive on its own.</summary>
 		public String? BaseGameFolder { get; set; }
 

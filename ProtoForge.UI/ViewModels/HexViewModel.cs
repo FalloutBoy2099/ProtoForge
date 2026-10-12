@@ -92,7 +92,7 @@ namespace ProtoForge.UI.ViewModels
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{
 				// The copy of an earlier session may still be open in the editor.
-				_notifier.Error(Loc.Get("hex.external"), ex.Message);
+				_notifier.Error(Loc.Get("hex.external"), ProtoForge.Core.UserTexts.Describe(ex));
 				return;
 			}
 
@@ -102,7 +102,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
 			{
-				_notifier.Error(Loc.Get("hex.external"), ex.Message);
+				_notifier.Error(Loc.Get("hex.external"), ProtoForge.Core.UserTexts.Describe(ex));
 				return;
 			}
 

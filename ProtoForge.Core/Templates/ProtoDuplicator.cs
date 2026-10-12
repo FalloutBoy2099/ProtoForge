@@ -13,7 +13,7 @@ namespace ProtoForge.Core.Templates
 		/// </summary>
 		public static (ProtoFile File, String FileName, String Name, String Description) Duplicate(ProtoEntry source, Int32 newIndex, String copySuffix)
 		{
-			ProtoFile file = source.File?.Clone() ?? throw new InvalidOperationException("The prototype cannot be duplicated: it has no readable content.");
+			ProtoFile file = source.File?.Clone() ?? throw new InvalidOperationException(UserTexts.Format("err.cannotDuplicate", "The prototype cannot be duplicated: it has no readable content."));
 			ProtoId pid = ProtoId.From(source.Type, newIndex);
 			file.StoredProtoId = pid.Value;
 			if (file.MessageId > 0 || source.Name.Length > 0)

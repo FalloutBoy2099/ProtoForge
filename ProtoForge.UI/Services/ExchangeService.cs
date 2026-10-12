@@ -48,7 +48,7 @@ namespace ProtoForge.UI.Services
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("export.title"), ex.Message);
+				_notifier.Error(Loc.Get("export.title"), ProtoForge.Core.UserTexts.Describe(ex));
 				return false;
 			}
 
@@ -95,7 +95,7 @@ namespace ProtoForge.UI.Services
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("export.title"), ex.Message);
+				_notifier.Error(Loc.Get("export.title"), ProtoForge.Core.UserTexts.Describe(ex));
 				return false;
 			}
 
@@ -127,7 +127,7 @@ namespace ProtoForge.UI.Services
 			}
 			catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException)
 			{
-				_notifier.Error(Loc.Get("import.title"), ex.Message);
+				_notifier.Error(Loc.Get("import.title"), ProtoForge.Core.UserTexts.Describe(ex));
 				return false;
 			}
 

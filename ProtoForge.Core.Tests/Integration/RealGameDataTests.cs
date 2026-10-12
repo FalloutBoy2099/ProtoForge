@@ -47,6 +47,69 @@ namespace ProtoForge.Core.Tests.Integration
 		}
 
 		[SkippableFact]
+		public async System.Threading.Tasks.Task Fallout2_SaveToAnotherFolder_AndReload_RoundTrips()
+		{
+			String? game = TestEnvironment.Fallout2Folder;
+			Skip.If(game is null, "No Fallout 2 installation found.");
+
+			await RoundTripAsync(game!);
+		}
+
+		[SkippableFact]
+		public async System.Threading.Tasks.Task Fallout1_SaveToAnotherFolder_AndReload_RoundTrips()
+		{
+			String? game = TestEnvironment.Fallout1Folder;
+			Skip.If(game is null, "No Fallout 1 installation found.");
+
+			await RoundTripAsync(game!);
+		}
+
+		/// <summary>Edits a prototype and its description, saves into a temporary folder (never into the game), and reads everything back.</summary>
+		private async System.Threading.Tasks.Task RoundTripAsync(String game)
+		{
+			String output = Path.Combine(Path.GetTempPath(), "pf-roundtrip-" + Guid.NewGuid().ToString("N"));
+			try
+			{
+				DiscoveryResult discovery = GameLayoutDiscovery.FromGameFolder(game);
+				discovery.Layout.OutputFolder = output;
+				Int32 pid;
+				Int32 newWeight;
+				using (GameWorkspace workspace = await GameWorkspace.OpenAsync(discovery.Layout, new WorkspaceOptions()))
+				{
+					ProtoEntry entry = workspace.Catalog.GetEntries(ProtoObjectType.Item).First(e => e.Kind == ProtoKind.MiscItem && e.File is not null && workspace.Texts.CanEditTexts(e));
+					pid = entry.Pid.Value;
+					newWeight = entry.File!.Get(FieldKeys.Weight) + 7;
+					workspace.SetField([entry], FieldKeys.Weight, newWeight);
+					workspace.SetTexts(entry, "Round trip", "first\nsecond");
+
+					SaveResult result = workspace.Save(workspace.CreateSavePlan());
+
+					Assert.True(result.Succeeded, String.Join("; ", result.Errors));
+					Assert.True(result.FilesWritten >= 2);
+				}
+
+				discovery = GameLayoutDiscovery.FromGameFolder(game);
+				discovery.Layout.OutputFolder = output;
+				using GameWorkspace reopened = await GameWorkspace.OpenAsync(discovery.Layout, new WorkspaceOptions());
+				ProtoEntry again = reopened.Catalog.Find(pid)!;
+
+				Assert.Equal(newWeight, again.File!.Get(FieldKeys.Weight));
+				Assert.Equal("Round trip", again.Name);
+				Assert.Equal("first\nsecond", again.Description);
+				String messages = File.ReadAllText(Directory.GetFiles(output, "pro_item.msg", SearchOption.AllDirectories).Single(), Encoding.Latin1);
+				Assert.Contains("first\\nsecond", messages, StringComparison.Ordinal);
+				Assert.DoesNotContain("\r\r", messages, StringComparison.Ordinal);
+			}
+			finally
+			{
+				if (Directory.Exists(output))
+				{
+					Directory.Delete(output, true);
+				}
+			}
+		}
+
+		[SkippableFact]
 		public void Dat1_EveryEntryOfBothArchivesDecodesToItsDeclaredSize()
 		{
 			String? folder = TestEnvironment.Fallout1Folder;

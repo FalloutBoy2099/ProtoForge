@@ -63,7 +63,34 @@ namespace ProtoForge.Core.Editing
 			get { return _undo; }
 		}
 
+		/// <summary>The actions that can be redone, the next one first.</summary>
+		public IReadOnlyList<IUndoableAction> RedoHistory
+		{
+			get
+			{
+				List<IUndoableAction> next = [.. _redo];
+				next.Reverse();
+				return next;
+			}
+		}
+
 		public event EventHandler? Changed;
+
+		/// <summary>Undoes several actions at once (a choice in the history list).</summary>
+		public void UndoMany(Int32 count)
+		{
+			for (Int32 i = 0; i < count && Undo(); i++)
+			{
+			}
+		}
+
+		/// <summary>Redoes several actions at once.</summary>
+		public void RedoMany(Int32 count)
+		{
+			for (Int32 i = 0; i < count && Redo(); i++)
+			{
+			}
+		}
 
 		public void Execute(IUndoableAction action)
 		{

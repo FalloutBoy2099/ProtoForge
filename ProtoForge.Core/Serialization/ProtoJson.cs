@@ -47,7 +47,7 @@ namespace ProtoForge.Core.Serialization
 			if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("protos", out JsonElement protos)
 				|| protos.ValueKind != JsonValueKind.Array)
 			{
-				throw new InvalidDataException("The file is not a ProtoForge JSON export (missing 'protos' array).");
+				throw new InvalidDataException(UserTexts.Format("err.notJson", "The file is not a ProtoForge JSON export (missing 'protos' array)."));
 			}
 
 			foreach (JsonElement item in protos.EnumerateArray())

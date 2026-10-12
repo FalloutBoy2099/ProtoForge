@@ -73,6 +73,12 @@ namespace ProtoForge.UI.ViewModels
 			StatusText = Loc.Get("status.ready");
 		}
 
+		/// <summary>True when there is something to undo or redo (the history button of the title bar).</summary>
+		public Boolean HasHistory
+		{
+			get { return _workspace?.Undo is { } undo && (undo.CanUndo || undo.CanRedo); }
+		}
+
 		public WorkspaceService Workspace
 		{
 			get { return _workspaceService; }
@@ -91,6 +97,47 @@ namespace ProtoForge.UI.ViewModels
 		public IList<String> SearchHistory
 		{
 			get { return _settings.Current.RecentSearches; }
+		}
+
+		/// <summary>Number of prototypes the current search shows (-1 when it is not known).</summary>
+		[ObservableProperty]
+		private Int32 _searchResultCount = -1;
+
+		public IList<String> SavedSearches
+		{
+			get { return _settings.Current.SavedSearches; }
+		}
+
+		/// <summary>Keeps the search when it is not saved yet, forgets it otherwise.</summary>
+		public void ToggleSavedSearch(String text)
+		{
+			text = text.Trim();
+			if (text.Length == 0)
+			{
+				return;
+			}
+
+			List<String> saved = _settings.Current.SavedSearches;
+			if (saved.RemoveAll(h => String.Equals(h, text, StringComparison.OrdinalIgnoreCase)) == 0)
+			{
+				saved.Insert(0, text);
+			}
+
+			_settings.Save();
+		}
+
+		/// <summary>The values of a search prefix that only the open game knows (the sources of the prototypes).</summary>
+		public IEnumerable<(String Name, String Label)> GetSearchValues(String key)
+		{
+			if (key == "source" && _workspaceService.Current is { } workspace)
+			{
+				return [.. workspace.Catalog.All
+					.GroupBy(e => e.SourceName, StringComparer.OrdinalIgnoreCase)
+					.OrderByDescending(g => g.Count())
+					.Select(g => (g.Key, g.Count().ToString("N0", System.Globalization.CultureInfo.CurrentCulture)))];
+			}
+
+			return [];
 		}
 
 		public void AddSearchHistory(String text)
@@ -280,6 +327,7 @@ namespace ProtoForge.UI.ViewModels
 			{
 				UndoCommand.NotifyCanExecuteChanged();
 				RedoCommand.NotifyCanExecuteChanged();
+				OnPropertyChanged(nameof(HasHistory));
 				UndoTooltip = _workspace?.Undo.UndoDescription is { } undo ? Loc.Format("edit.undoTip", undo) : Loc.Get("edit.undo");
 				RedoTooltip = _workspace?.Undo.RedoDescription is { } redo ? Loc.Format("edit.redoTip", redo) : Loc.Get("edit.redo");
 				UpdateStatus();

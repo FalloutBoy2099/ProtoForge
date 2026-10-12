@@ -53,6 +53,18 @@ namespace ProtoForge.UI.Controls
 			typeof(SearchBar),
 			new PropertyMetadata(null));
 
+		public static readonly DependencyProperty SavedProperty = DependencyProperty.Register(
+			nameof(Saved),
+			typeof(IList<String>),
+			typeof(SearchBar),
+			new PropertyMetadata(null));
+
+		public static readonly DependencyProperty ResultCountProperty = DependencyProperty.Register(
+			nameof(ResultCount),
+			typeof(Int32),
+			typeof(SearchBar),
+			new PropertyMetadata(-1, (d, _) => ((SearchBar)d).UpdateResultText()));
+
 		private static readonly (String Key, String Resource)[] Prefixes =
 		[
 			("pid:", "search.key.pid"),
@@ -90,6 +102,26 @@ namespace ProtoForge.UI.Controls
 			get { return (IList<String>?)GetValue(HistoryProperty); }
 			set { SetValue(HistoryProperty, value); }
 		}
+
+		/// <summary>The searches the user kept, newest first (the owner stores them).</summary>
+		public IList<String>? Saved
+		{
+			get { return (IList<String>?)GetValue(SavedProperty); }
+			set { SetValue(SavedProperty, value); }
+		}
+
+		/// <summary>How many results the search gives (-1: not known, nothing is shown).</summary>
+		public Int32 ResultCount
+		{
+			get { return (Int32)GetValue(ResultCountProperty); }
+			set { SetValue(ResultCountProperty, value); }
+		}
+
+		/// <summary>Values for the prefixes that only the owner knows (the sources of the open game).</summary>
+		public Func<String, IEnumerable<(String Name, String Label)>>? ValueProvider { get; set; }
+
+		/// <summary>Raised when the user clicks the star: the owner keeps or forgets the search.</summary>
+		public event EventHandler<String>? SaveToggled;
 
 		/// <summary>Raised when the user validates a search (Enter or Down towards the results).</summary>
 		public event EventHandler<String>? Committed;
@@ -141,10 +173,41 @@ namespace ProtoForge.UI.Controls
 
 		private void OnInputTextChanged(Object sender, TextChangedEventArgs e)
 		{
+			UpdateStar();
 			if (Input.IsKeyboardFocusWithin)
 			{
 				Refresh();
 			}
+		}
+
+		private void OnStarClick(Object sender, RoutedEventArgs e)
+		{
+			if (Text.Trim().Length > 0)
+			{
+				SaveToggled?.Invoke(this, Text.Trim());
+				UpdateStar();
+			}
+		}
+
+		private void UpdateResultText()
+		{
+			ResultText.Text = ResultCount >= 0 ? ResultCount.ToString("N0", System.Globalization.CultureInfo.CurrentCulture) : String.Empty;
+		}
+
+		private Boolean IsSaved()
+		{
+			return Saved is { } saved && saved.Any(s => String.Equals(s, Text.Trim(), StringComparison.OrdinalIgnoreCase));
+		}
+
+		/// <summary>A filled star for a search that is kept, an empty one otherwise.</summary>
+		private void UpdateStar()
+		{
+			Boolean saved = IsSaved();
+			StarGlyph.Text = saved ? "\uE735" : "\uE734";
+			StarGlyph.SetResourceReference(TextBlock.ForegroundProperty, saved ? "AccentFillColorDefaultBrush" : "TextFillColorSecondaryBrush");
+			String tip = Loc.Get(saved ? "search.unsave" : "search.save");
+			StarButton.ToolTip = tip;
+			System.Windows.Automation.AutomationProperties.SetName(StarButton, tip);
 		}
 
 		private void OnClearClick(Object sender, RoutedEventArgs e)
@@ -202,6 +265,7 @@ namespace ProtoForge.UI.Controls
 				}
 			}
 
+			AddSaved(text, found);
 			AddRecent(text, found);
 			if (found.Count > 0)
 			{
@@ -217,6 +281,22 @@ namespace ProtoForge.UI.Controls
 			String recent = Loc.Get("search.recent");
 			ClearHistoryButton.Visibility = found.Any(s => s.Section == recent) ? Visibility.Visible : Visibility.Collapsed;
 			SuggestionsPopup.IsOpen = _suggestions.Count > 0 && Input.IsKeyboardFocusWithin;
+		}
+
+		private void AddSaved(String text, List<SearchSuggestion> found)
+		{
+			if (Saved is not { Count: > 0 } saved)
+			{
+				return;
+			}
+
+			String section = Loc.Get("search.saved");
+			foreach (String entry in saved
+				.Where(h => !String.Equals(h, text, StringComparison.OrdinalIgnoreCase) && (text.Length == 0 || h.Contains(text, StringComparison.OrdinalIgnoreCase)))
+				.Take(MaxRecent))
+			{
+				found.Add(new SearchSuggestion(section, entry, String.Empty, entry));
+			}
 		}
 
 		private void AddRecent(String text, List<SearchSuggestion> found)
@@ -245,7 +325,7 @@ namespace ProtoForge.UI.Controls
 					_flags ??= [.. FlagSets.All.SelectMany(set => set.Bits).Select(bit => bit.Name).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).Select(n => (n, Loc.Flag(n)))];
 					return _flags;
 				default:
-					return [];
+					return ValueProvider?.Invoke(key) ?? [];
 			}
 		}
 	}

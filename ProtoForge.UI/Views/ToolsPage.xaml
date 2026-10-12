@@ -159,6 +159,86 @@
                 </StackPanel>
             </Border>
 
+            <!--  Find and replace in the texts  -->
+            <Border
+                Margin="0,0,0,12"
+                IsEnabled="{Binding Workspace.HasWorkspace}"
+                Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc tools.replace}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc tools.replaceHint}" />
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.replaceFind}" />
+                            <ui:TextBox Width="240" Text="{Binding ReplaceFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.replaceWith}" />
+                            <ui:TextBox Width="240" Text="{Binding ReplaceWith, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.replaceScope}" />
+                            <ComboBox
+                                Width="160"
+                                DisplayMemberPath="Label"
+                                ItemsSource="{Binding ReplaceScopes}"
+                                SelectedItem="{Binding ReplaceScope, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.replaceFrom}" />
+                            <ui:NumberBox
+                                Width="110"
+                                MaxDecimalPlaces="0"
+                                Minimum="0"
+                                PlaceholderText="1"
+                                SpinButtonPlacementMode="Hidden"
+                                Value="{Binding ReplaceFromNumber, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.replaceTo}" />
+                            <ui:NumberBox
+                                Width="110"
+                                MaxDecimalPlaces="0"
+                                Minimum="0"
+                                SpinButtonPlacementMode="Hidden"
+                                Value="{Binding ReplaceToNumber, Mode=TwoWay}" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,0,0,8">
+                        <CheckBox
+                            Margin="0,0,16,0"
+                            Content="{loc:Loc tools.replaceNames}"
+                            IsChecked="{Binding ReplaceInNames, Mode=TwoWay}" />
+                        <CheckBox
+                            Margin="0,0,16,0"
+                            Content="{loc:Loc tools.replaceDescriptions}"
+                            IsChecked="{Binding ReplaceInDescriptions, Mode=TwoWay}" />
+                        <CheckBox Content="{loc:Loc tools.replaceCase}" IsChecked="{Binding ReplaceMatchCase, Mode=TwoWay}" />
+                    </WrapPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button
+                            Margin="0,0,8,0"
+                            Command="{Binding PreviewReplaceCommand}"
+                            Content="{loc:Loc tools.replacePreview}" />
+                        <ui:Button
+                            Appearance="Primary"
+                            Command="{Binding ApplyReplaceCommand}"
+                            Content="{loc:Loc tools.replaceApply}" />
+                        <TextBlock
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource MutedText}"
+                            Text="{Binding ReplaceStatus}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!--  Art tools  -->
             <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
                 <StackPanel>

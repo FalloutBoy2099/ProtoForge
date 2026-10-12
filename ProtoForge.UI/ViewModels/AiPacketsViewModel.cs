@@ -711,7 +711,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 			catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
 			{
-				_notifier.Error(Loc.Get("ai.openTitle"), ex is InvalidDataException ? Loc.Get("ai.notAiFile") : ex.Message);
+				_notifier.Error(Loc.Get("ai.openTitle"), ex is InvalidDataException ? Loc.Get("ai.notAiFile") : ProtoForge.Core.UserTexts.Describe(ex));
 				return;
 			}
 

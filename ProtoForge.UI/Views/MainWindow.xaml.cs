@@ -2,6 +2,7 @@ namespace ProtoForge.UI.Views
 {
 	using System;
 	using System.Collections.Generic;
+	using System.Linq;
 	using System.Windows;
 	using Wpf.Ui;
 	using Wpf.Ui.Abstractions;
@@ -44,6 +45,8 @@ namespace ProtoForge.UI.Views
 			SearchBox.PreviewKeyDown += (_, e) => OnSearchKeyDown(e, shell);
 			SearchBox.Committed += (_, text) => viewModel.AddSearchHistory(text);
 			SearchBox.HistoryCleared += (_, _) => viewModel.ClearSearchHistory();
+			SearchBox.SaveToggled += (_, text) => viewModel.ToggleSavedSearch(text);
+			SearchBox.ValueProvider = viewModel.GetSearchValues;
 			viewModel.FocusSearchRequested += (_, _) => SearchBox.FocusInput();
 
 			Width = settings.Current.WindowWidth;
@@ -82,6 +85,58 @@ namespace ProtoForge.UI.Views
 
 				e.Handled = true;
 			}
+		}
+
+		private const Int32 HistoryLength = 25;
+
+		/// <summary>Lists the latest edits: choosing one goes back (or forward) to the state just after it.</summary>
+		private void OnHistoryButtonClick(Object sender, RoutedEventArgs e)
+		{
+			if (_workspace.Current?.Undo is not { } undo)
+			{
+				return;
+			}
+
+			System.Windows.Controls.ContextMenu menu = CreateMenu(HistoryButton);
+			List<ProtoForge.Core.Editing.IUndoableAction> done = [.. undo.UndoHistory];
+			done.Reverse();
+			List<ProtoForge.Core.Editing.IUndoableAction> undone = [.. undo.RedoHistory];
+
+			// What can be redone comes first (furthest in the future on top), then the current state, then what was done (latest first).
+			foreach ((ProtoForge.Core.Editing.IUndoableAction action, Int32 index) in undone.Take(HistoryLength).Select((a, i) => (a, i)).Reverse())
+			{
+				System.Windows.Controls.MenuItem item = CreateMenuItem(action.Description, false);
+				item.Foreground = (System.Windows.Media.Brush)FindResource("TextFillColorTertiaryBrush");
+				item.Click += (_, _) => undo.RedoMany(index + 1);
+				menu.Items.Add(item);
+			}
+
+			System.Windows.Controls.MenuItem current = CreateMenuItem(Loc.Get("history.current"), true);
+			current.IsEnabled = false;
+			menu.Items.Add(current);
+			foreach ((ProtoForge.Core.Editing.IUndoableAction action, Int32 index) in done.Take(HistoryLength).Select((a, i) => (a, i)))
+			{
+				if (index == 0)
+				{
+					continue;
+				}
+
+				System.Windows.Controls.MenuItem item = CreateMenuItem(action.Description, false);
+				item.Click += (_, _) => undo.UndoMany(index);
+				menu.Items.Add(item);
+			}
+
+			if (done.Count > 0)
+			{
+				// The first entry of the list is the state that follows the latest action: its description is the one that is current.
+				current.Header = $"{Loc.Get("history.current")}: {done[0].Description}";
+				System.Windows.Controls.MenuItem start = CreateMenuItem(Loc.Get("history.start"), false);
+				start.Click += (_, _) => undo.UndoMany(done.Count);
+				menu.Items.Add(new System.Windows.Controls.Separator());
+				menu.Items.Add(start);
+			}
+
+			menu.IsOpen = true;
 		}
 
 		private void OnOpenButtonClick(Object sender, RoutedEventArgs e)

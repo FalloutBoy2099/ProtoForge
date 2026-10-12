@@ -1,6 +1,8 @@
 namespace ProtoForge.Core.Tests
 {
 	using System;
+	using System.Collections.Generic;
+	using System.Linq;
 	using System.IO;
 	using System.Text;
 	using ProtoForge.Core.Editing;
@@ -335,6 +337,68 @@ namespace ProtoForge.Core.Tests
 			{
 				Directory.Delete(root, true);
 			}
+		}
+
+		[Theory]
+		[InlineData(936, "中文测试：铁砧与锤子")]
+		[InlineData(950, "中文測試：鐵砧與錘子")]
+		[InlineData(949, "한국어 시험: 모루와 망치")]
+		[InlineData(932, "日本語のテスト：金床とハンマー")]
+		public void Msg_DoubleByteFiles_RoundTripExactly_AndKeepTheOtherEntriesWhenOneIsEdited(Int32 codePage, String sample)
+		{
+			System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+			Encoding encoding = Encoding.GetEncoding(codePage);
+			Byte[] original = encoding.GetBytes("{100}{}{" + sample + "}\r\n{101}{}{second " + sample + "}\r\n{200}{}{plain}\r\n");
+
+			MsgFile file = MsgFile.Parse(original, encoding);
+
+			Assert.Equal(original, file.ToBytes());
+			file.SetText(200, "changed");
+			MsgFile reloaded = MsgFile.Parse(file.ToBytes(), encoding);
+			Assert.Equal(sample, reloaded.Find(100)?.Text);
+			Assert.Equal("second " + sample, reloaded.Find(101)?.Text);
+			Assert.Equal("changed", reloaded.Find(200)?.Text);
+		}
+
+		[Fact]
+		public void TextReplacer_ReplacesInNamesAndDescriptions_AndCountsTheOccurrences()
+		{
+			MessageStore store = new(_ => null, Encoding.Latin1);
+			ProtoTextService texts = new(store);
+			ProtoFile file = ProtoFactory.CreateDefault(ProtoKind.MiscItem, ProtoId.From(ProtoObjectType.Item, 1));
+			file.MessageId = 100;
+			ProtoEntry entry = new(ProtoId.From(ProtoObjectType.Item, 1), "x.pro", file, null, "test");
+			texts.Write(entry, "Big Gun", "A big gun, big!");
+
+			IReadOnlyList<TextReplacement> any = TextReplacer.Plan([entry], texts, "big", "huge", true, true, false);
+			IReadOnlyList<TextReplacement> exact = TextReplacer.Plan([entry], texts, "big", "huge", true, true, true);
+			IReadOnlyList<TextReplacement> namesOnly = TextReplacer.Plan([entry], texts, "Big", "Small", true, false, true);
+
+			Assert.Equal("huge Gun", any.Single().Name);
+			Assert.Equal("A huge gun, huge!", any.Single().Description);
+			Assert.Equal(3, any.Single().Occurrences);
+			Assert.Equal(2, exact.Single().Occurrences);
+			Assert.Equal("Small Gun", namesOnly.Single().Name);
+			Assert.Equal("A big gun, big!", namesOnly.Single().Description);
+			Assert.Empty(TextReplacer.Plan([entry], texts, "absent", "x", true, true, false));
+		}
+
+		[Fact]
+		public void UndoManager_ListsTheRedoActionsAndJumpsSeveralSteps()
+		{
+			UndoManager undo = new() { MergeWindow = TimeSpan.Zero };
+			for (Int32 i = 0; i < 4; i++)
+			{
+				undo.Execute(new NoOpAction());
+			}
+
+			undo.UndoMany(3);
+
+			Assert.Single(undo.UndoHistory);
+			Assert.Equal(3, undo.RedoHistory.Count);
+			undo.RedoMany(2);
+			Assert.Equal(3, undo.UndoHistory.Count);
+			Assert.Single(undo.RedoHistory);
 		}
 	}
 }

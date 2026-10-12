@@ -1,5 +1,6 @@
 namespace ProtoForge.Infrastructure.Workspace
 {
+	using ProtoForge.Core;
 	using System;
 	using ProtoForge.Core.Editing;
 	using ProtoForge.Core.Formats.Frm;
@@ -31,7 +32,7 @@ namespace ProtoForge.Infrastructure.Workspace
 			_fileName = fileName;
 			_frm = frm;
 			_changed = changed;
-			Description = $"Add art {fileName}";
+			Description = UserTexts.Format("act.addArt", "Add art {0}", fileName);
 		}
 
 		public String Description { get; }

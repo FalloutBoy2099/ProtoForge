@@ -30,7 +30,7 @@ namespace ProtoForge.UI
 
 			SettingsService settings = new();
 			Loc.Initialize(settings.Current.UiLanguage);
-			ProtoForge.Infrastructure.UserTexts.Translator = key => Loc.Has(key) ? Loc.Get(key) : null;
+			ProtoForge.Core.UserTexts.Translator = key => Loc.Has(key) ? Loc.Get(key) : null;
 
 			ServiceCollection services = new();
 			ConfigureServices(services, settings);
@@ -72,7 +72,7 @@ namespace ProtoForge.UI
 			}
 			catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
 			{
-				_services?.GetService<INotifier>()?.Error(Loc.Get("open.failed"), ex.Message);
+				_services?.GetService<INotifier>()?.Error(Loc.Get("open.failed"), ProtoForge.Core.UserTexts.Describe(ex));
 			}
 		}
 
@@ -137,7 +137,7 @@ namespace ProtoForge.UI
 			INotifier? notifier = _services?.GetService<INotifier>();
 			if (notifier is not null)
 			{
-				notifier.Error(Loc.Get("error.unexpected"), e.Exception.Message);
+				notifier.Error(Loc.Get("error.unexpected"), ProtoForge.Core.UserTexts.Describe(e.Exception));
 			}
 			else
 			{

@@ -97,6 +97,15 @@
                 Text="{Binding Summary}" />
             <ui:Button
                 Margin="8,0,0,0"
+                Command="{Binding ExportReportCommand}"
+                Content="{loc:Loc compare.export}"
+                DockPanel.Dock="Right">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowExport24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <ui:Button
+                Margin="8,0,0,0"
                 Command="{Binding OpenInWindowCommand}"
                 Content="{loc:Loc compare.newWindow}"
                 DockPanel.Dock="Right">

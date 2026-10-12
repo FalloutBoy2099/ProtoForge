@@ -12,8 +12,9 @@ namespace ProtoForge.UI.Views
 	/// <summary>Shows exactly which files a save will create or replace, before anything is written.</summary>
 	public partial class SavePlanView : UserControl
 	{
-		public SavePlanView(SavePlan plan, Boolean backup)
+		public SavePlanView(SavePlan plan, Boolean backup, String? warning = null)
 		{
+			Warning = warning ?? String.Empty;
 			Summary = Loc.Format("save.summary", plan.Items.Count, plan.Items.Count(i => i.ReplacesExisting));
 			OutputFolder = plan.OutputFolder;
 			BackupNote = backup ? Loc.Get("save.backupOn") : Loc.Get("save.backupOff");
@@ -36,6 +37,9 @@ namespace ProtoForge.UI.Views
 			DataContext = this;
 			InitializeComponent();
 		}
+
+		/// <summary>Shown in the caution color above the files (the output folder is inside the game, for instance).</summary>
+		public String Warning { get; }
 
 		public String Summary { get; }
 

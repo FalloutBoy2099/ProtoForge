@@ -30,7 +30,7 @@ namespace ProtoForge.Core.Editing
 
 		public String Description
 		{
-			get { return $"Message {_id}"; }
+			get { return UserTexts.Format("act.message", "Message {0}", _id); }
 		}
 
 		public void Do()
@@ -87,7 +87,7 @@ namespace ProtoForge.Core.Editing
 
 		public String Description
 		{
-			get { return $"Delete message {_id}"; }
+			get { return UserTexts.Format("act.deleteMessage", "Delete message {0}", _id); }
 		}
 
 		public void Do()

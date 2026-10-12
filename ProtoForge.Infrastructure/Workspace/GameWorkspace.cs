@@ -1,5 +1,6 @@
 namespace ProtoForge.Infrastructure.Workspace
 {
+	using ProtoForge.Core;
 	using System;
 	using System.Collections.Generic;
 	using System.IO;
@@ -208,7 +209,8 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		private static String DescribeEdit(IReadOnlyList<ProtoEntry> entries, String key)
 		{
-			return entries.Count == 1 ? $"{key} ({entries[0].Pid})" : $"{key} ({entries.Count})";
+			String label = UserTexts.Format("field." + key, key);
+			return entries.Count == 1 ? $"{label} ({entries[0].Pid})" : $"{label} ({entries.Count})";
 		}
 
 		public void SetTexts(ProtoEntry entry, String name, String description)
@@ -244,7 +246,7 @@ namespace ProtoForge.Infrastructure.Workspace
 
 			Int32 index = Catalog.NextIndex(type);
 			ProtoFile file = template.Create(ProtoId.From(type, index));
-			AddProtoAction action = new(Catalog, Texts, type, file, ProtoDuplicator.FormatFileName(index), OutputSourceName, name, description, $"Create {template.DisplayName}");
+			AddProtoAction action = new(Catalog, Texts, type, file, ProtoDuplicator.FormatFileName(index), OutputSourceName, name, description, UserTexts.Format("act.create", "Create {0}", template.DisplayName));
 			Undo.Execute(action);
 			return action.Entry!;
 		}
@@ -253,7 +255,7 @@ namespace ProtoForge.Infrastructure.Workspace
 		{
 			Int32 index = Catalog.NextIndex(source.Type);
 			(ProtoFile file, String fileName, String name, String description) = ProtoDuplicator.Duplicate(source, index, copySuffix);
-			AddProtoAction action = new(Catalog, Texts, source.Type, file, fileName, OutputSourceName, name, description, $"Duplicate {source.Pid}");
+			AddProtoAction action = new(Catalog, Texts, source.Type, file, fileName, OutputSourceName, name, description, UserTexts.Format("act.duplicate", "Duplicate {0}", source.Pid));
 			Undo.Execute(action);
 			return action.Entry!;
 		}
@@ -269,17 +271,17 @@ namespace ProtoForge.Infrastructure.Workspace
 		{
 			if (!CanDelete(entry))
 			{
-				throw new InvalidOperationException("Only the last prototype of a list can be deleted.");
+				throw new InvalidOperationException(UserTexts.Format("err.onlyLastDelete", "Only the last prototype of a list can be deleted."));
 			}
 
-			Undo.Execute(new RemoveLastProtoAction(Catalog, entry, $"Delete {entry.Pid}"));
+			Undo.Execute(new RemoveLastProtoAction(Catalog, entry, UserTexts.Format("act.delete", "Delete {0}", entry.Pid)));
 		}
 
 		public void ReplaceFile(ProtoEntry entry, ProtoFile file, String description)
 		{
 			if (entry.File is null)
 			{
-				throw new InvalidOperationException("The prototype has no content to replace.");
+				throw new InvalidOperationException(UserTexts.Format("err.noContentReplace", "The prototype has no content to replace."));
 			}
 
 			Undo.Execute(new ReplaceFileAction(entry, file, description));
@@ -480,13 +482,13 @@ namespace ProtoForge.Infrastructure.Workspace
 			path = Path.GetFullPath(path);
 			if (CanSave && String.Equals(path, Path.GetFullPath(Path.Combine(OutputFolder!, "data", "ai.txt")), StringComparison.OrdinalIgnoreCase))
 			{
-				throw new InvalidDataException("This file is the AI file of the output folder: edit the AI packets of the game instead.");
+				throw new InvalidDataException(UserTexts.Format("err.aiOutputFile", "This file is the AI file of the output folder: edit the AI packets of the game instead."));
 			}
 
 			AiFile file = AiFile.Parse(File.ReadAllBytes(path));
 			if (file.Sections.Count == 0 || !file.Sections.Any(s => s.GetValue(AiParameters.PacketNumberKey) is not null))
 			{
-				throw new InvalidDataException("The file does not contain any AI packet.");
+				throw new InvalidDataException(UserTexts.Format("err.noAiPacket", "The file does not contain any AI packet."));
 			}
 
 			CustomAi = file;
@@ -557,7 +559,7 @@ namespace ProtoForge.Infrastructure.Workspace
 		{
 			if (!CanSave)
 			{
-				throw new InvalidOperationException("No output folder is configured.");
+				throw new InvalidOperationException(UserTexts.Format("err.noOutputFolder", "No output folder is configured."));
 			}
 
 			String output = OutputFolder!;
@@ -622,7 +624,7 @@ namespace ProtoForge.Infrastructure.Workspace
 				if (target is null)
 				{
 					// The path came from a LST or an archive and would leave the output folder: never write it.
-					errors.Add($"{item.VirtualPath}: the path is not allowed.");
+					errors.Add(UserTexts.Format("err.pathNotAllowed", "{0}: the path is not allowed.", item.VirtualPath));
 					progress?.Report((Double)(i + 1) / plan.Items.Count);
 					continue;
 				}
@@ -673,7 +675,7 @@ namespace ProtoForge.Infrastructure.Workspace
 				}
 				catch (Exception ex) when (ex is not OutOfMemoryException)
 				{
-					errors.Add($"{item.VirtualPath}: {ex.Message}");
+					errors.Add($"{item.VirtualPath}: {UserTexts.Describe(ex)}");
 				}
 
 				progress?.Report((Double)(i + 1) / plan.Items.Count);

@@ -1,5 +1,6 @@
 namespace ProtoForge.Infrastructure.Plugins
 {
+	using ProtoForge.Core;
 	using System;
 	using System.Collections.Generic;
 	using System.IO;

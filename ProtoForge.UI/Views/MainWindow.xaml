@@ -141,6 +141,15 @@
                         ToolTip="{Binding RedoTooltip}">
                         <ui:SymbolIcon Style="{StaticResource TitleIcon}" Symbol="ArrowRedo24" />
                     </Button>
+                    <Button
+                        x:Name="HistoryButton"
+                        AutomationProperties.Name="{loc:Loc history.title}"
+                        Click="OnHistoryButtonClick"
+                        IsEnabled="{Binding HasHistory}"
+                        Style="{StaticResource TitleCommand}"
+                        ToolTip="{loc:Loc history.title}">
+                        <ui:SymbolIcon Style="{StaticResource TitleIcon}" Symbol="History24" />
+                    </Button>
                     <Rectangle
                         Width="1"
                         Height="16"
@@ -174,6 +183,8 @@
                     x:Name="SearchBox"
                     Width="340"
                     History="{Binding SearchHistory}"
+                    ResultCount="{Binding SearchResultCount}"
+                    Saved="{Binding SavedSearches}"
                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                     ToolTip="{loc:Loc search.tooltip}" />
             </ui:TitleBar.CenterContent>
