@@ -65,7 +65,7 @@
             ShowMaximize="True"
             ShowMinimize="True">
             <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/ProtoForge;component/Assets/icon.png" />
+                <ui:ImageIcon Source="pack://application:,,,/ProtoForge;component/Assets/icon_small.png" />
             </ui:TitleBar.Icon>
             <ui:TitleBar.Header>
                 <StackPanel Margin="14,0,0,0" Orientation="Horizontal">

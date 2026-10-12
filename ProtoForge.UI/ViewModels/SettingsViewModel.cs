@@ -130,6 +130,10 @@ namespace ProtoForge.UI.ViewModels
 		[ObservableProperty]
 		private String _gameLanguage = String.Empty;
 
+		/// <summary>The language folders found in the game (<c>text/&lt;language&gt;/game</c>), to pick from or to type over.</summary>
+		[ObservableProperty]
+		private IReadOnlyList<String> _gameLanguages = [];
+
 		[ObservableProperty]
 		private ObservableCollection<LayerItemViewModel> _layers = [];
 
@@ -422,6 +426,9 @@ namespace ProtoForge.UI.ViewModels
 				HasWorkspace = workspace is not null;
 				Layers = workspace is null ? [] : new ObservableCollection<LayerItemViewModel>(workspace.Layout.Layers.Select(l => new LayerItemViewModel(l.Clone()) { Changed = MarkLayoutDirty }));
 				OutputFolder = workspace?.Layout.OutputFolder ?? String.Empty;
+				GameLanguages = workspace is null
+					? []
+					: [.. workspace.Files.EnumerateDirectories("text").Where(d => workspace.Files.Enumerate($"text/{d}/game").Count > 0)];
 				GameLanguage = workspace?.Layout.Language ?? String.Empty;
 				LayoutDirty = false;
 			}

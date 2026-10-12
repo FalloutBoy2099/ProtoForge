@@ -104,10 +104,14 @@
                         </Grid>
 
                         <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc settings.gameLanguage}" />
-                        <ui:TextBox
+                        <ComboBox
                             Width="220"
                             Margin="0,0,0,14"
                             HorizontalAlignment="Left"
+                            IsEditable="True"
+                            IsTextSearchEnabled="True"
+                            ItemsSource="{Binding GameLanguages}"
+                            StaysOpenOnEdit="True"
                             Text="{Binding GameLanguage, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 
                         <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc settings.layers}" />

@@ -30,6 +30,12 @@ namespace ProtoForge.Infrastructure.Layers
 		/// <summary>Virtual paths (normalised) of the files directly inside a directory.</summary>
 		public abstract IReadOnlyList<String> Enumerate(String directory);
 
+		/// <summary>The names of the folders directly inside a directory.</summary>
+		public virtual IReadOnlyList<String> EnumerateDirectories(String directory)
+		{
+			return [];
+		}
+
 		public virtual void Dispose()
 		{
 		}
@@ -112,6 +118,17 @@ namespace ProtoForge.Infrastructure.Layers
 				.Select(f => GamePath.Combine(directory, Path.GetFileName(f)))];
 		}
 
+		public override IReadOnlyList<String> EnumerateDirectories(String directory)
+		{
+			String? physical = ToPhysical(directory);
+			if (physical is null || !Directory.Exists(physical))
+			{
+				return [];
+			}
+
+			return [.. Directory.EnumerateDirectories(physical).Select(d => Path.GetFileName(d))];
+		}
+
 		/// <summary>The path on disk, or null when the virtual path is not safe (an LST line or DAT entry must not reach outside the folder).</summary>
 		private String? ToPhysical(String virtualPath)
 		{
@@ -160,6 +177,25 @@ namespace ProtoForge.Infrastructure.Layers
 		{
 			Dictionary<String, List<String>> index = _directories ??= BuildDirectoryIndex();
 			return index.TryGetValue(GamePath.Normalize(directory), out List<String>? files) ? files : [];
+		}
+
+		public override IReadOnlyList<String> EnumerateDirectories(String directory)
+		{
+			Dictionary<String, List<String>> index = _directories ??= BuildDirectoryIndex();
+			String normalized = GamePath.Normalize(directory);
+			String prefix = normalized.Length == 0 ? String.Empty : normalized + "/";
+			HashSet<String> names = new(StringComparer.Ordinal);
+			foreach (String key in index.Keys)
+			{
+				if (key.StartsWith(prefix, StringComparison.Ordinal) && key.Length > prefix.Length)
+				{
+					String rest = key[prefix.Length..];
+					Int32 slash = rest.IndexOf('/', StringComparison.Ordinal);
+					names.Add(slash < 0 ? rest : rest[..slash]);
+				}
+			}
+
+			return [.. names];
 		}
 
 		public override void Dispose()

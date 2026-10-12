@@ -316,5 +316,25 @@ namespace ProtoForge.Core.Tests
 			Assert.DoesNotContain("one\r", written, StringComparison.Ordinal);
 			Assert.DoesNotContain("two\r", written, StringComparison.Ordinal);
 		}
+
+		[Fact]
+		public void LayeredFileSystem_ListsTheLanguageFoldersOfTheLayers()
+		{
+			String root = Path.Combine(Path.GetTempPath(), "pf-lang-" + Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(Path.Combine(root, "text", "french", "game"));
+			Directory.CreateDirectory(Path.Combine(root, "text", "German", "game"));
+			try
+			{
+				GameLayout layout = new();
+				layout.Layers.Add(new LayerDefinition { Path = root, Kind = LayerKind.Directory, Name = "data" });
+				using LayeredFileSystem files = LayeredFileSystem.Open(layout, []);
+
+				Assert.Equal(["french", "German"], files.EnumerateDirectories("text"));
+			}
+			finally
+			{
+				Directory.Delete(root, true);
+			}
+		}
 	}
 }

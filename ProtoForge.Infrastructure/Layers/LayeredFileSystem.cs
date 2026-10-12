@@ -253,6 +253,22 @@ namespace ProtoForge.Infrastructure.Layers
 			return sorted;
 		}
 
+		/// <summary>The names of the folders directly inside a directory, over all the layers (without duplicates, ignoring case).</summary>
+		public IReadOnlyList<String> EnumerateDirectories(String directory)
+		{
+			String normalized = GamePath.Normalize(directory);
+			HashSet<String> names = new(StringComparer.OrdinalIgnoreCase);
+			foreach (GameLayer layer in _layers)
+			{
+				foreach (String name in layer.EnumerateDirectories(normalized))
+				{
+					names.Add(name);
+				}
+			}
+
+			return [.. names.Order(StringComparer.OrdinalIgnoreCase)];
+		}
+
 		/// <summary>Forgets cached directory listings (call after files were written).</summary>
 		public void Invalidate()
 		{

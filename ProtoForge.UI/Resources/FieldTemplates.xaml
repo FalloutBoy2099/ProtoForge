@@ -1,6 +1,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:ProtoForge.UI.Controls"
     xmlns:fields="clr-namespace:ProtoForge.UI.ViewModels.Fields"
     xmlns:loc="clr-namespace:ProtoForge.UI.Services"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
@@ -231,8 +232,8 @@
     <!--  Flags  -->
     <DataTemplate DataType="{x:Type fields:FlagsFieldViewModel}">
         <StackPanel
-            Width="520"
-            Margin="0,0,8,6"
+            Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+            Margin="0,0,0,6"
             ToolTip="{Binding Tooltip}"
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibility}}">
             <Grid Margin="0,0,0,4">
@@ -261,7 +262,11 @@
             <ItemsControl IsEnabled="{Binding IsEnabled}" ItemsSource="{Binding Flags}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel ItemHeight="24" ItemWidth="188" />
+                        <controls:ColumnsPanel
+                            ItemHeight="24"
+                            MaxColumns="4"
+                            MinColumns="2"
+                            MinItemWidth="190" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
