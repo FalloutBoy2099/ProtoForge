@@ -109,6 +109,8 @@ namespace ProtoForge.UI
 			services.AddSingleton<ValidationViewModel>();
 			services.AddSingleton<MessagesPage>();
 			services.AddSingleton<MessagesViewModel>();
+			services.AddSingleton<BalancePage>();
+			services.AddSingleton<BalanceViewModel>();
 			services.AddSingleton<ToolsPage>();
 			services.AddSingleton<ToolsViewModel>();
 			services.AddSingleton<AiPacketsPage>();

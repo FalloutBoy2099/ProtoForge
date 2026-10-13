@@ -100,7 +100,14 @@ namespace ProtoForge.UI.ViewModels
 		private ProtoKind? _kindFilter;
 
 		[ObservableProperty]
+		[NotifyPropertyChangedFor(nameof(HasKindChoice))]
 		private IReadOnlyList<ProtoKind> _availableKinds = [];
+
+		/// <summary>The kind filter only makes sense when the type has several kinds (critters, walls and tiles have one).</summary>
+		public Boolean HasKindChoice
+		{
+			get { return AvailableKinds.Count > 1; }
+		}
 
 		[ObservableProperty]
 		private Boolean _modifiedOnly;

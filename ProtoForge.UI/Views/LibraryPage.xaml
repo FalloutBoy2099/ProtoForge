@@ -178,19 +178,28 @@
                     Grid.Row="1"
                     Margin="0,0,0,8"
                     LastChildFill="False">
-                    <ComboBox
-                        MinWidth="150"
+                    <Grid
                         Margin="0,0,8,0"
                         DockPanel.Dock="Left"
-                        ItemsSource="{Binding AvailableKinds}"
-                        SelectedItem="{Binding KindFilter, Mode=TwoWay}"
-                        Visibility="{Binding AvailableKinds.Count, Converter={StaticResource VisibleWhen}}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource KindLabel}}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
+                        Visibility="{Binding HasKindChoice, Converter={StaticResource BoolToVisibility}}">
+                        <ComboBox
+                            MinWidth="150"
+                            ItemsSource="{Binding AvailableKinds}"
+                            SelectedItem="{Binding KindFilter, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource KindLabel}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock
+                            Margin="10,0,30,0"
+                            VerticalAlignment="Center"
+                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                            IsHitTestVisible="False"
+                            Text="{loc:Loc filter.allKinds}"
+                            Visibility="{Binding KindFilter, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                    </Grid>
                     <ToggleButton
                         x:Name="FilterToggle"
                         Margin="0,0,8,0"
@@ -818,6 +827,118 @@
                                 </ui:CardExpander>
                             </StackPanel>
                         </ScrollViewer>
+                    </TabItem>
+                    <TabItem
+                        Header="{loc:Loc tab.critterPreview}"
+                        IsSelected="{Binding CritterPreview.IsActive, Mode=TwoWay}"
+                        Visibility="{Binding IsCritter, Converter={StaticResource BoolToVisibility}}">
+                        <DockPanel DataContext="{Binding CritterPreview}">
+                            <StackPanel
+                                Margin="0,10,0,10"
+                                DockPanel.Dock="Top"
+                                Orientation="Horizontal">
+                                <StackPanel Margin="0,0,16,0">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc preview.weaponLabel}" />
+                                    <ComboBox
+                                        Width="200"
+                                        DisplayMemberPath="Label"
+                                        ItemsSource="{Binding Weapons}"
+                                        SelectedItem="{Binding SelectedWeapon, Mode=TwoWay}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc preview.animLabel}" />
+                                    <ComboBox
+                                        Width="200"
+                                        DisplayMemberPath="Label"
+                                        ItemsSource="{Binding Animations}"
+                                        SelectedItem="{Binding SelectedAnimation, Mode=TwoWay}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <TextBlock
+                                DockPanel.Dock="Top"
+                                Style="{StaticResource MutedText}"
+                                Text="{Binding Message}" />
+                            <ItemsControl ItemsSource="{Binding Directions}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,10,10">
+                                            <Border
+                                                Width="150"
+                                                Height="150"
+                                                Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                                                CornerRadius="6">
+                                                <controls:AnimatedImage
+                                                    Margin="6"
+                                                    Frames="{Binding Frames}"
+                                                    FramesPerSecond="{Binding FramesPerSecond}"
+                                                    RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                                    Stretch="Uniform" />
+                                            </Border>
+                                            <TextBlock
+                                                Margin="0,4,0,0"
+                                                HorizontalAlignment="Center"
+                                                Style="{StaticResource MutedText}"
+                                                Text="{Binding Title}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="{loc:Loc tab.usage}" IsSelected="{Binding Usage.IsActive, Mode=TwoWay}">
+                        <DockPanel DataContext="{Binding Usage}">
+                            <TextBlock
+                                Margin="0,10,0,6"
+                                DockPanel.Dock="Top"
+                                Style="{StaticResource MutedText}"
+                                Text="{Binding Summary}" />
+                            <ui:DataGrid
+                                AutoGenerateColumns="False"
+                                AutomationProperties.Name="{loc:Loc tab.usage}"
+                                CanUserAddRows="False"
+                                CanUserDeleteRows="False"
+                                GridLinesVisibility="None"
+                                HeadersVisibility="Column"
+                                IsReadOnly="True"
+                                ItemsSource="{Binding Rows}"
+                                MouseDoubleClick="OnUsageDoubleClick"
+                                SelectionMode="Single"
+                                ToolTip="{loc:Loc usage.hint}">
+                                <ui:DataGrid.Columns>
+                                    <DataGridTextColumn
+                                        Width="190"
+                                        Binding="{Binding Relation}"
+                                        ElementStyle="{StaticResource CellText}"
+                                        Header="{loc:Loc usage.relation}" />
+                                    <DataGridTextColumn
+                                        Width="*"
+                                        MinWidth="140"
+                                        Binding="{Binding Name}"
+                                        ElementStyle="{StaticResource CellText}"
+                                        Header="{loc:Loc col.name}" />
+                                    <DataGridTextColumn
+                                        Width="110"
+                                        Binding="{Binding Pid}"
+                                        ElementStyle="{StaticResource CellText}"
+                                        Header="PID" />
+                                    <DataGridTextColumn
+                                        Width="150"
+                                        Binding="{Binding Field}"
+                                        ElementStyle="{StaticResource CellText}"
+                                        Header="{loc:Loc usage.field}" />
+                                    <DataGridTextColumn
+                                        Width="120"
+                                        Binding="{Binding Source}"
+                                        ElementStyle="{StaticResource CellText}"
+                                        Header="{loc:Loc col.source}" />
+                                </ui:DataGrid.Columns>
+                            </ui:DataGrid>
+                        </DockPanel>
                     </TabItem>
                     <TabItem Header="{loc:Loc tab.hex}" Visibility="{Binding ShowAdvanced, Converter={StaticResource BoolToVisibility}}">
                         <DockPanel Margin="0,10,0,0" DataContext="{Binding Hex}">

@@ -116,6 +116,15 @@ namespace ProtoForge.UI.Views
 			}
 		}
 
+		/// <summary>Double click on a usage: shows that prototype in the list.</summary>
+		private void OnUsageDoubleClick(Object sender, MouseButtonEventArgs e)
+		{
+			if (sender is System.Windows.Controls.DataGrid { SelectedItem: UsageRow row, DataContext: UsageViewModel usage })
+			{
+				usage.Show(row);
+			}
+		}
+
 		private void OnGridSelectionChanged(Object sender, SelectionChangedEventArgs e)
 		{
 			_viewModel.OnSelectionChanged(Grid.SelectedItems);

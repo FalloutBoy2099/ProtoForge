@@ -366,9 +366,7 @@ namespace ProtoForge.UI.ViewModels
 
 		private Byte[] BmpToFrm(Byte[] bmp)
 		{
-			Palette palette = _workspaceService.Current?.Palette ?? Palette.Default;
-			FrmFrame frame = FrmConverter.ToFrame(BmpFile.Read(bmp), palette);
-			return FrmWriter.WriteStatic(frame);
+			return ArtImport.ToFrm("image.bmp", bmp, _workspaceService.Current?.Palette ?? Palette.Default);
 		}
 
 		/// <summary>

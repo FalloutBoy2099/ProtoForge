@@ -11,7 +11,7 @@ namespace ProtoForge.Core.Tests
 	/// <summary>Guards the UI translations: both languages define the same keys and every key used in code or XAML exists.</summary>
 	public partial class LocalizationTests
 	{
-		private static readonly String[] DynamicPrefixes = ["category.", "issue.", "kind.", "layer.role.", "template.", "theme.", "tip.", "type.", "choice.", "ai.group.", "ai.param.", "field."];
+		private static readonly String[] DynamicPrefixes = ["category.", "issue.", "kind.", "layer.role.", "template.", "theme.", "tip.", "type.", "choice.", "ai.group.", "ai.param.", "field.", "usage.", "preview.dir", "preview.weapon."];
 
 		private static String FindUiFolder()
 		{

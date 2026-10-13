@@ -110,6 +110,24 @@ namespace ProtoForge.Core.Tests.Integration
 		}
 
 		[SkippableFact]
+		public async System.Threading.Tasks.Task UsageFinder_FindsTheWeaponsOfAnAmmunition_AndTheAmmunitionOfAWeapon()
+		{
+			String? game = TestEnvironment.Fallout2Folder;
+			Skip.If(game is null, "No Fallout 2 installation found.");
+
+			DiscoveryResult discovery = GameLayoutDiscovery.FromGameFolder(game!);
+			using GameWorkspace workspace = await GameWorkspace.OpenAsync(discovery.Layout, new WorkspaceOptions());
+			ProtoEntry weapon = workspace.Catalog.GetEntries(ProtoObjectType.Item).First(e => e.Kind == ProtoKind.Weapon && e.File is not null && e.File.Get(FieldKeys.AmmoPid) > 0);
+			ProtoEntry ammo = workspace.Catalog.Find(weapon.File!.Get(FieldKeys.AmmoPid))!;
+
+			IReadOnlyList<UsageRef> ofWeapon = UsageFinder.Find(workspace.Catalog, weapon, workspace.AiPackets);
+			IReadOnlyList<UsageRef> ofAmmo = UsageFinder.Find(workspace.Catalog, ammo, workspace.AiPackets);
+
+			Assert.Contains(ofWeapon, u => u.Kind == UsageKind.Uses && ReferenceEquals(u.Entry, ammo));
+			Assert.Contains(ofAmmo, u => u.Kind == UsageKind.UsedBy && ReferenceEquals(u.Entry, weapon));
+		}
+
+		[SkippableFact]
 		public void Dat1_EveryEntryOfBothArchivesDecodesToItsDeclaredSize()
 		{
 			String? folder = TestEnvironment.Fallout1Folder;

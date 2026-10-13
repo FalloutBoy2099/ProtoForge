@@ -167,6 +167,8 @@ namespace ProtoForge.UI.ViewModels
 			_context = new EditorContext(workspace, art);
 			Hex = new HexViewModel(workspace, settings, dialogs, notifier);
 			Table = new FieldTableViewModel(workspace);
+			Usage = new UsageViewModel(workspace, shell);
+			CritterPreview = new CritterPreviewViewModel(workspace, art);
 			_showAdvanced = settings.Current.AdvancedMode;
 			_weaponScoreType = settings.Current.OriginalWeaponScore ? 1 : 0;
 			workspace.Undo.Changed += OnUndoChanged;
@@ -176,6 +178,10 @@ namespace ProtoForge.UI.ViewModels
 		public HexViewModel Hex { get; }
 
 		public FieldTableViewModel Table { get; }
+
+		public UsageViewModel Usage { get; }
+
+		public CritterPreviewViewModel CritterPreview { get; }
 
 		public IReadOnlyList<ProtoEntry> Selection
 		{
@@ -725,6 +731,8 @@ namespace ProtoForge.UI.ViewModels
 				UpdateHeader();
 				Hex.Load(Single);
 				Table.Load(Single);
+				Usage.Load(Single);
+				CritterPreview.Load(Single);
 			}
 			finally
 			{

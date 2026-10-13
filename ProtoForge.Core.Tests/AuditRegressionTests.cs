@@ -16,6 +16,7 @@ namespace ProtoForge.Core.Tests
 	using ProtoForge.Infrastructure.Templates;
 	using ProtoForge.Core.Domain;
 	using ProtoForge.Core.Serialization;
+	using ProtoForge.Core.Stats;
 	using ProtoForge.Core.Vfs;
 	using ProtoForge.Infrastructure.Layers;
 	using Xunit;
@@ -399,6 +400,55 @@ namespace ProtoForge.Core.Tests
 			undo.RedoMany(2);
 			Assert.Equal(3, undo.UndoHistory.Count);
 			Assert.Single(undo.RedoHistory);
+		}
+
+		[Fact]
+		public void CombatSimulator_AppliesAmmunitionThresholdAndResistanceInOrder()
+		{
+			// 10-20 damage, doubled by the ammunition, minus a threshold of 4, then 25 % of resistance reduced to 15 % by armor piercing ammunition.
+			CombatResult result = CombatSimulator.Calculate(new CombatInput(10, 20, 2, 1, -10, 4, 25, 3, 100));
+
+			Assert.Equal(15, result.EffectiveResistance);
+			Assert.Equal(13, result.PerHit.Min);
+			Assert.Equal(30, result.PerHit.Max);
+			Assert.Equal(39, result.PerAttack.Min);
+			Assert.Equal(90, result.PerAttack.Max);
+			Assert.Equal(2, result.AttacksBestCase);
+			Assert.Equal(3, result.AttacksWorstCase);
+		}
+
+		[Fact]
+		public void CombatSimulator_AHighThresholdStopsTheDamage_AndNoHitPointsGivesNoAttackCount()
+		{
+			CombatResult stopped = CombatSimulator.Calculate(new CombatInput(1, 5, 1, 1, 0, 20, 0, 1, 50));
+			CombatResult unknown = CombatSimulator.Calculate(new CombatInput(10, 10, 1, 1, 0, 0, 0, 1, 0));
+
+			Assert.Equal(0, stopped.PerHit.Max);
+			Assert.Null(stopped.AttacksAverage);
+			Assert.Equal(10, unknown.PerHit.Average);
+			Assert.Null(unknown.AttacksAverage);
+		}
+
+		[Theory]
+		[InlineData("C:\\art\\My New Sword!.BMP", "my_new_sword_.frm")]
+		[InlineData("plain.frm", "plain.frm")]
+		[InlineData("a_very_long_name_that_does_not_fit_in_the_list.frm", "a_very_long_name_tha.frm")]
+		[InlineData("\u00e9\u00e9.bmp", "__.frm")]
+		public void ArtImport_NamesPicturesLikeTheGame(String path, String expected)
+		{
+			Assert.Equal(expected, ArtImport.GetGameName(path));
+		}
+
+		[Fact]
+		public void ArtImport_ConvertsABmpToAFrm_AndKeepsAFrmAsItIs()
+		{
+			Byte[] bmp = BmpFile.Write32Bit(2, 2, [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255]);
+			Byte[] frm = ArtImport.ToFrm("x.bmp", bmp, Palette.Default);
+
+			Assert.Equal(frm, ArtImport.ToFrm("x.frm", frm, Palette.Default));
+			Assert.Equal(2, FrmFile.Parse(frm).Directions[0][0].Width);
+			Assert.True(ArtImport.IsSupported("C:\\x\\a.BMP"));
+			Assert.False(ArtImport.IsSupported("a.png"));
 		}
 	}
 }

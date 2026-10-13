@@ -241,6 +241,11 @@
                         <ui:SymbolIcon Symbol="TextBulletListLtr24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{loc:Loc nav.balance}" TargetPageType="{x:Type views:BalancePage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="DataBarVertical24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
                 <ui:NavigationViewItem Content="{loc:Loc nav.ai}" TargetPageType="{x:Type views:AiPacketsPage}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Bot24" />

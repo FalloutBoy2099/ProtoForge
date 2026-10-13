@@ -180,6 +180,7 @@
         <StackPanel
             Width="308"
             Margin="0,0,8,5"
+            controls:ArtDrop.IsEnabled="True"
             ToolTip="{Binding Tooltip}"
             Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibility}}">
             <StackPanel Orientation="Horizontal">
