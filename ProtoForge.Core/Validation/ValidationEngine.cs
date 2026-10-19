@@ -25,6 +25,7 @@ namespace ProtoForge.Core.Validation
 				new ArtReferenceRule(),
 				new ScriptRule(),
 				new ValueRule(),
+				new ConsistencyRule(),
 			];
 			if (extraRules is not null)
 			{

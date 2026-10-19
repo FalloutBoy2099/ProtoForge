@@ -172,6 +172,52 @@ namespace ProtoForge.UI.ViewModels
 		private Double? _simHitPoints;
 
 		[ObservableProperty]
+		private Double? _simSkill = 75;
+
+		[ObservableProperty]
+		private Double? _simPerception = 5;
+
+		[ObservableProperty]
+		private Double? _simStrength = 5;
+
+		[ObservableProperty]
+		private Double? _simLuck = 5;
+
+		[ObservableProperty]
+		private Double? _simDistance = 10;
+
+		/// <summary>Armor class of the target when it is typed (otherwise the one of the chosen armor or critter).</summary>
+		[ObservableProperty]
+		private Double? _simArmorClass;
+
+		/// <summary>Critical chance in percent when it is typed (otherwise the luck of the attacker).</summary>
+		[ObservableProperty]
+		private Double? _simCriticalChance;
+
+		/// <summary>The order of <see cref="AimedLocation"/>: uncalled, head, arm, leg, eyes, groin.</summary>
+		[ObservableProperty]
+		private Int32 _simLocationIndex;
+
+		/// <summary>0 = none, 1 = accurate, 2 = long range, 3 = scope range.</summary>
+		[ObservableProperty]
+		private Int32 _simPerkIndex;
+
+		[ObservableProperty]
+		private Boolean _simPlayer = true;
+
+		[ObservableProperty]
+		private Boolean _simSniper;
+
+		[ObservableProperty]
+		private Double? _simSharpshooter = 0;
+
+		[ObservableProperty]
+		private Double? _simCriticalMultiplier = 2;
+
+		[ObservableProperty]
+		private Double? _simDamageBonus = 0;
+
+		[ObservableProperty]
 		private IReadOnlyList<SimulationLine> _simLines = [];
 
 		public BalanceViewModel(WorkspaceService workspaceService, SettingsService settings, ShellNavigator shell)
@@ -298,40 +344,27 @@ namespace ProtoForge.UI.ViewModels
 			Int32 ammoPid = value?.File?.TryGet(FieldKeys.AmmoPid) ?? -1;
 			SimAmmo = ammoPid > 0 ? _workspaceService.Current?.Catalog.Find(ammoPid) : null;
 			SimBurst = false;
+			SimPerkIndex = (value?.File?.TryGet("Perk") ?? -1) switch
+			{
+				CombatSimulator.PerkAccurate => 1,
+				CombatSimulator.PerkLongRange => 2,
+				CombatSimulator.PerkScopeRange => 3,
+				_ => 0,
+			};
 			Simulate();
 		}
 
-		partial void OnSimAmmoChanged(ProtoEntry? value)
+		/// <summary>Every input of the simulation recalculates it (the weapon is handled on its own: it also picks the ammunition and the perk).</summary>
+		protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
 		{
-			Simulate();
+			base.OnPropertyChanged(e);
+			if (e.PropertyName is { } name && name.StartsWith("Sim", StringComparison.Ordinal) && name is not (nameof(SimLines) or nameof(SimWeapon)))
+			{
+				Simulate();
+			}
 		}
 
-		partial void OnSimTargetChanged(ProtoEntry? value)
-		{
-			Simulate();
-		}
-
-		partial void OnSimBurstChanged(Boolean value)
-		{
-			Simulate();
-		}
-
-		partial void OnSimThresholdChanged(Double? value)
-		{
-			Simulate();
-		}
-
-		partial void OnSimResistanceChanged(Double? value)
-		{
-			Simulate();
-		}
-
-		partial void OnSimHitPointsChanged(Double? value)
-		{
-			Simulate();
-		}
-
-		/// <summary>Calculates the damage of the chosen weapon and ammunition against the chosen target (or the typed values).</summary>
+		/// <summary>Calculates the damage of the chosen weapon and ammunition against the chosen target (or the typed values), and how often it lands.</summary>
 		private void Simulate()
 		{
 			if (_refreshing || SimWeapon?.File is not { } weapon)
@@ -343,13 +376,14 @@ namespace ProtoForge.UI.ViewModels
 			ProtoFile? ammo = SimAmmo?.File;
 			Int32 typeIndex = Math.Clamp(weapon.TryGet("DamageType") ?? 0, 0, ProtoSchemas.DamageSuffixes.Length - 1);
 			String suffix = ProtoSchemas.DamageSuffixes[typeIndex];
-			(Int32 targetDt, Int32 targetDr, Int32 targetHp) = ReadTarget(suffix);
+			(Int32 targetDt, Int32 targetDr, Int32 targetHp, Int32 targetAc) = ReadTarget(suffix);
 			Int32 threshold = SimThreshold is { } t ? (Int32)t : targetDt;
 			Int32 resistance = SimResistance is { } r ? (Int32)r : targetDr;
 			Int32 hitPoints = SimHitPoints is { } h ? (Int32)h : targetHp;
+			Int32 armorClass = SimArmorClass is { } a ? (Int32)a : targetAc;
 			Int32 rounds = SimBurst ? Math.Max(1, weapon.TryGet("BurstRounds") ?? 1) : 1;
 
-			CombatResult result = CombatSimulator.Calculate(new CombatInput(
+			CombatInput damage = new(
 				weapon.TryGet(FieldKeys.MinDamage) ?? 0,
 				weapon.TryGet(FieldKeys.MaxDamage) ?? 0,
 				ammo?.TryGet(FieldKeys.DamageMultiplier) ?? 1,
@@ -358,10 +392,41 @@ namespace ProtoForge.UI.ViewModels
 				threshold,
 				resistance,
 				rounds,
-				hitPoints));
+				hitPoints,
+				(Int32)(SimDamageBonus ?? 0));
+			CombatResult result = CombatSimulator.Calculate(damage);
+
+			// The attack mode of the weapon decides whether the distance matters: throwing and firing are ranged, punching and swinging are not.
+			Boolean ranged = SimBurst || (weapon.TryGet("PrimaryAttackMode") ?? 0) >= 5;
+			Int32 luck = (Int32)(SimLuck ?? 0);
+			HitInput hit = new(
+				(Int32)(SimSkill ?? 0),
+				(Int32)(SimPerception ?? 0),
+				(Int32)(SimStrength ?? 0),
+				weapon.TryGet("MinStrength") ?? 0,
+				(Int32)(SimDistance ?? 0),
+				ranged,
+				SimPlayer,
+				(Int32)(SimSharpshooter ?? 0),
+				SimPerkIndex switch
+				{
+					1 => CombatSimulator.PerkAccurate,
+					2 => CombatSimulator.PerkLongRange,
+					3 => CombatSimulator.PerkScopeRange,
+					_ => -1,
+				},
+				armorClass,
+				ammo?.TryGet("ArmorClassModifier") ?? 0,
+				(AimedLocation)Math.Clamp(SimLocationIndex, 0, 5),
+				(Int32)(SimCriticalChance ?? luck),
+				SimSniper,
+				luck,
+				SimCriticalMultiplier ?? 2,
+				0);
+			ExpectedResult expected = CombatSimulator.Estimate(damage, hit);
 
 			String damageType = _workspaceService.Current?.Choices.Get(ChoiceCatalog.DamageType).Where(o => o.Value == typeIndex).Select(o => o.Label).FirstOrDefault() ?? suffix;
-			SimLines =
+			List<SimulationLine> lines =
 			[
 				new SimulationLine(Loc.Get("balance.sim.damageType"), damageType),
 				new SimulationLine(Loc.Get("balance.sim.raw"), Range(result.Raw)),
@@ -370,14 +435,24 @@ namespace ProtoForge.UI.ViewModels
 				new SimulationLine(Loc.Get("balance.sim.perHit"), Range(result.PerHit)),
 				new SimulationLine(Loc.Format("balance.sim.perAttack", rounds), Range(result.PerAttack)),
 				new SimulationLine(Loc.Get("balance.sim.attacks"), hitPoints <= 0 ? Loc.Get("balance.sim.noHp") : Attacks(result)),
+				new SimulationLine(Loc.Get("balance.sim.toHit"), $"{Math.Clamp(expected.ToHit, 0, 100)} %" + (expected.ToHit < 0 ? $"  ({expected.ToHit})" : String.Empty)),
+				new SimulationLine(Loc.Get("balance.sim.critical"), $"{expected.CriticalChance * 100:0.#} %"),
 			];
+			if (rounds > 1)
+			{
+				lines.Add(new SimulationLine(Loc.Format("balance.sim.expectedHits", rounds), expected.ExpectedHits.ToString("0.##")));
+			}
+
+			lines.Add(new SimulationLine(Loc.Get("balance.sim.expectedDamage"), expected.ExpectedDamage.ToString("0.#")));
+			lines.Add(new SimulationLine(Loc.Get("balance.sim.expectedAttacks"), hitPoints <= 0 ? Loc.Get("balance.sim.noHp") : expected.ExpectedAttacksToKill is { } n ? n.ToString("0") : Loc.Get("balance.sim.never")));
+			SimLines = lines;
 		}
 
-		private (Int32 Threshold, Int32 Resistance, Int32 HitPoints) ReadTarget(String suffix)
+		private (Int32 Threshold, Int32 Resistance, Int32 HitPoints, Int32 ArmorClass) ReadTarget(String suffix)
 		{
 			if (SimTarget?.File is not { } file)
 			{
-				return (0, 0, 0);
+				return (0, 0, 0, 0);
 			}
 
 			if (SimTarget.Kind == ProtoKind.Critter)
@@ -388,10 +463,10 @@ namespace ProtoForge.UI.ViewModels
 					return (file.TryGet(key) ?? 0) + (file.TryGet(ProtoSchemas.BonusPrefix + key) ?? 0);
 				}
 
-				return (Both("Dt" + suffix), Both("Dr" + suffix), Both("MaxHp"));
+				return (Both("Dt" + suffix), Both("Dr" + suffix), Both("MaxHp"), Both("ArmorClass"));
 			}
 
-			return (file.TryGet("Dt" + suffix) ?? 0, file.TryGet("Dr" + suffix) ?? 0, 0);
+			return (file.TryGet("Dt" + suffix) ?? 0, file.TryGet("Dr" + suffix) ?? 0, 0, file.TryGet("ArmorClass") ?? 0);
 		}
 
 		private static String Range(DamageRange range)

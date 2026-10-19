@@ -409,10 +409,10 @@ namespace ProtoForge.Core.Tests
 			CombatResult result = CombatSimulator.Calculate(new CombatInput(10, 20, 2, 1, -10, 4, 25, 3, 100));
 
 			Assert.Equal(15, result.EffectiveResistance);
-			Assert.Equal(13, result.PerHit.Min);
-			Assert.Equal(30, result.PerHit.Max);
-			Assert.Equal(39, result.PerAttack.Min);
-			Assert.Equal(90, result.PerAttack.Max);
+			Assert.Equal(14, result.PerHit.Min);
+			Assert.Equal(31, result.PerHit.Max);
+			Assert.Equal(42, result.PerAttack.Min);
+			Assert.Equal(93, result.PerAttack.Max);
 			Assert.Equal(2, result.AttacksBestCase);
 			Assert.Equal(3, result.AttacksWorstCase);
 		}

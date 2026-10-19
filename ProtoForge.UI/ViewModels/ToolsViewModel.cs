@@ -145,6 +145,7 @@ namespace ProtoForge.UI.ViewModels
 			_selectedAddArtKind = AddArtKinds[0];
 			_selectedExtractKind = ExtractKinds[0];
 			_workspaceService.WorkspaceChanged += (_, _) => Refresh();
+			InitializeBulk();
 			Refresh();
 		}
 
@@ -600,6 +601,7 @@ namespace ProtoForge.UI.ViewModels
 		private void Refresh()
 		{
 			UserTemplates = _templates.Load();
+			RefreshBackups();
 			Plugins = _workspaceService.Current is { } workspace
 				? [.. workspace.ValidationEngine.Rules.Select(r => r.Id)]
 				: [];

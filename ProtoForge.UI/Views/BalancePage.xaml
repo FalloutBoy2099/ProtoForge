@@ -1,4 +1,4 @@
-<Page
+﻿<Page
     x:Class="ProtoForge.UI.Views.BalancePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -395,6 +395,165 @@
                                 </WrapPanel>
                             </StackPanel>
                         </Grid>
+
+                        <TextBlock
+                            Margin="0,8,0,6"
+                            Style="{StaticResource SectionTitle}"
+                            Text="{loc:Loc balance.sim.attacker}" />
+                        <WrapPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.skill}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="300"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    ToolTip="{loc:Loc balance.sim.skillTip}"
+                                    Value="{Binding SimSkill, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.perception}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    Value="{Binding SimPerception, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.strength}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    Value="{Binding SimStrength, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.luck}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    Value="{Binding SimLuck, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.distance}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="60"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    Value="{Binding SimDistance, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.armorClass}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    ToolTip="{loc:Loc balance.sim.armorClassTip}"
+                                    Value="{Binding SimArmorClass, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.criticalChance}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    ToolTip="{loc:Loc balance.sim.criticalChanceTip}"
+                                    Value="{Binding SimCriticalChance, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.damageBonus}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="99"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    ToolTip="{loc:Loc balance.sim.damageBonusTip}"
+                                    Value="{Binding SimDamageBonus, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.location}" />
+                                <ComboBox
+                                    Width="150"
+                                    AutomationProperties.Name="{loc:Loc balance.sim.location}"
+                                    SelectedIndex="{Binding SimLocationIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.locUncalled}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.locHead}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.locArm}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.locLeg}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.locEyes}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.locGroin}" />
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.weaponPerk}" />
+                                <ComboBox
+                                    Width="200"
+                                    AutomationProperties.Name="{loc:Loc balance.sim.weaponPerk}"
+                                    SelectedIndex="{Binding SimPerkIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.perkNone}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.perkAccurate}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.perkLongRange}" />
+                                    <ComboBoxItem Content="{loc:Loc balance.sim.perkScopeRange}" />
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.criticalMultiplier}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="1"
+                                    Maximum="6"
+                                    Minimum="1"
+                                    SpinButtonPlacementMode="Hidden"
+                                    ToolTip="{loc:Loc balance.sim.criticalMultiplierTip}"
+                                    Value="{Binding SimCriticalMultiplier, Mode=TwoWay}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc balance.sim.sharpshooter}" />
+                                <ui:NumberBox
+                                    Width="100"
+                                    HorizontalAlignment="Left"
+                                    MaxDecimalPlaces="0"
+                                    Maximum="3"
+                                    Minimum="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    Value="{Binding SimSharpshooter, Mode=TwoWay}" />
+                            </StackPanel>
+                        </WrapPanel>
+                        <WrapPanel Margin="0,0,0,4">
+                            <CheckBox
+                                Margin="0,0,16,0"
+                                Content="{loc:Loc balance.sim.player}"
+                                IsChecked="{Binding SimPlayer, Mode=TwoWay}"
+                                ToolTip="{loc:Loc balance.sim.playerTip}" />
+                            <CheckBox
+                                Content="{loc:Loc balance.sim.sniper}"
+                                IsChecked="{Binding SimSniper, Mode=TwoWay}"
+                                ToolTip="{loc:Loc balance.sim.sniperTip}" />
+                        </WrapPanel>
 
                         <Border
                             Margin="0,8,0,0"

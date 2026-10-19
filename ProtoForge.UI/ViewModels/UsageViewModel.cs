@@ -79,26 +79,75 @@ namespace ProtoForge.UI.ViewModels
 				return;
 			}
 
-			IReadOnlyList<UsageRef> found = await Task.Run(() => UsageFinder.Find(_workspace.Catalog, entry, _workspace.AiPackets));
+			IReadOnlyList<String> scripts = _workspace.ScriptNames;
+			IReadOnlyList<UsageRef> found = await Task.Run(() => UsageFinder.Find(_workspace.Catalog, entry, _workspace.AiPackets, null, scripts));
 			if (version != _version)
 			{
 				return;
 			}
 
+			// The prototypes answer at once; the maps and the scripts take a moment the first time they are read.
+			Task<ReferenceIndex> pending = _workspace.GetReferenceIndexAsync();
+			Display(found, pending.IsCompleted ? null : Loc.Get("usage.mapsLoading"));
+			if (pending.IsCompleted && pending.IsFaulted)
+			{
+				return;
+			}
+
+			ReferenceIndex index;
+			try
+			{
+				index = await pending;
+			}
+			catch (Exception ex) when (ex is OperationCanceledException or InvalidOperationException or System.IO.IOException)
+			{
+				Display(found, null);
+				return;
+			}
+
+			if (version != _version)
+			{
+				return;
+			}
+
+			IReadOnlyList<UsageRef> complete = await Task.Run(() => UsageFinder.Find(_workspace.Catalog, entry, _workspace.AiPackets, index, scripts));
+			if (version == _version)
+			{
+				Display(complete, index.UnreadableMaps.Count > 0 ? Loc.Format("usage.mapsSkipped", index.UnreadableMaps.Count) : null);
+			}
+		}
+
+		private void Display(IReadOnlyList<UsageRef> found, String? note)
+		{
 			Rows =
 			[
 				.. found
 					.OrderBy(u => u.Kind)
 					.ThenBy(u => u.Entry?.Pid.Value ?? Int32.MaxValue)
-					.Select(u => new UsageRow(
-						Loc.Get("usage." + u.Kind),
-						Loc.Field(u.FieldKey),
-						u.Entry is null ? u.Detail : u.Entry.DisplayName,
-						u.Entry is null ? String.Empty : u.Entry.Pid.ToString(),
-						u.Entry?.SourceName ?? String.Empty,
-						u.Entry)),
+					.ThenBy(u => u.Detail, StringComparer.OrdinalIgnoreCase)
+					.Select(ToRow),
 			];
-			Summary = found.Count == 0 ? Loc.Get("usage.none") : Loc.Format("usage.count", found.Count);
+			String summary = found.Count == 0 ? Loc.Get("usage.none") : Loc.Format("usage.count", found.Count);
+			Summary = note is null ? summary : summary + " " + note;
+		}
+
+		private static UsageRow ToRow(UsageRef u)
+		{
+			String name = u.Kind switch
+			{
+				UsageKind.PlacedOnMap when u.Count > 0 && u.SecondCount > 0 => Loc.Format("usage.mapBoth", u.Detail, u.Count, u.SecondCount),
+				UsageKind.PlacedOnMap when u.Count > 0 => Loc.Format("usage.mapPlaced", u.Detail, u.Count),
+				UsageKind.PlacedOnMap => Loc.Format("usage.mapCarried", u.Detail, u.SecondCount),
+				UsageKind.ScriptOnMap => Loc.Format("usage.mapScript", u.Detail, u.Count),
+				_ => u.Entry is null ? u.Detail : u.Entry.DisplayName,
+			};
+			return new UsageRow(
+				Loc.Get("usage." + u.Kind),
+				u.FieldKey.Length == 0 ? String.Empty : Loc.Field(u.FieldKey),
+				name,
+				u.Entry is null ? String.Empty : u.Entry.Pid.ToString(),
+				u.Entry?.SourceName ?? String.Empty,
+				u.Entry);
 		}
 	}
 }

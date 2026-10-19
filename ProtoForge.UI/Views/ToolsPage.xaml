@@ -239,6 +239,112 @@
                 </StackPanel>
             </Border>
 
+            <!--  Bulk edit of numbers  -->
+            <Border
+                Margin="0,0,0,12"
+                IsEnabled="{Binding Workspace.HasWorkspace}"
+                Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc tools.bulk}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc tools.bulkHint}"
+                        TextWrapping="Wrap" />
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.bulkKind}" />
+                            <ComboBox
+                                Width="170"
+                                ItemsSource="{Binding BulkKinds}"
+                                SelectedItem="{Binding SelectedBulkKind, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.bulkField}" />
+                            <ComboBox
+                                Width="220"
+                                ItemsSource="{Binding BulkFields}"
+                                SelectedItem="{Binding SelectedBulkField, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.bulkOperation}" />
+                            <ComboBox
+                                Width="150"
+                                AutomationProperties.Name="{loc:Loc tools.bulkOperation}"
+                                SelectedIndex="{Binding BulkOperationIndex, Mode=TwoWay}">
+                                <ComboBoxItem Content="{loc:Loc tools.bulkSet}" />
+                                <ComboBoxItem Content="{loc:Loc tools.bulkAdd}" />
+                                <ComboBoxItem Content="{loc:Loc tools.bulkMultiply}" />
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.bulkValue}" />
+                            <ui:NumberBox
+                                Width="130"
+                                MaxDecimalPlaces="3"
+                                SpinButtonPlacementMode="Hidden"
+                                Value="{Binding BulkValue, Mode=TwoWay}" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,16,8">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.bulkWhere}" />
+                            <ComboBox
+                                Width="220"
+                                ItemsSource="{Binding BulkConditionFields}"
+                                SelectedItem="{Binding SelectedConditionField, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8" Visibility="{Binding HasBulkCondition, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.bulkComparison}" />
+                            <ComboBox
+                                Width="90"
+                                AutomationProperties.Name="{loc:Loc tools.bulkComparison}"
+                                SelectedIndex="{Binding BulkComparisonIndex, Mode=TwoWay}">
+                                <ComboBoxItem Content="=" />
+                                <ComboBoxItem Content="≠" />
+                                <ComboBoxItem Content="&lt;" />
+                                <ComboBoxItem Content="≤" />
+                                <ComboBoxItem Content="&gt;" />
+                                <ComboBoxItem Content="≥" />
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,16,8" Visibility="{Binding HasBulkCondition, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Loc tools.bulkValue}" />
+                            <StackPanel Orientation="Horizontal">
+                                <ui:NumberBox
+                                    Width="130"
+                                    MaxDecimalPlaces="0"
+                                    SpinButtonPlacementMode="Hidden"
+                                    Value="{Binding BulkConditionValue, Mode=TwoWay}" />
+                                <TextBlock
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource MutedText}"
+                                    Text="{Binding BulkConditionHint}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </WrapPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button
+                            Margin="0,0,8,0"
+                            Command="{Binding PreviewBulkCommand}"
+                            Content="{loc:Loc tools.replacePreview}" />
+                        <ui:Button
+                            Appearance="Primary"
+                            Command="{Binding ApplyBulkCommand}"
+                            Content="{loc:Loc tools.bulkApply}" />
+                    </StackPanel>
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        Style="{StaticResource MutedText}"
+                        Text="{Binding BulkStatus}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
             <!--  Art tools  -->
             <Border Margin="0,0,0,12" Style="{StaticResource CardPanel}">
                 <StackPanel>
@@ -319,6 +425,46 @@
                             FontSize="12"
                             Style="{StaticResource MutedText}"
                             Text="{Binding ExtractStatus}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Backups  -->
+            <Border
+                Margin="0,0,0,12"
+                IsEnabled="{Binding Workspace.HasWorkspace}"
+                Style="{StaticResource CardPanel}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitle}"
+                        Text="{loc:Loc backup.title}" />
+                    <TextBlock
+                        Margin="0,0,0,12"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc backup.hint}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc backup.none}"
+                        Visibility="{Binding HasBackups, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                    <ListBox
+                        MaxHeight="180"
+                        ItemsSource="{Binding Backups}"
+                        SelectedItem="{Binding SelectedBackup, Mode=TwoWay}"
+                        Visibility="{Binding HasBackups, Converter={StaticResource VisibleWhen}}" />
+                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                        <ui:Button
+                            Margin="0,0,6,0"
+                            Appearance="Primary"
+                            Command="{Binding RestoreBackupCommand}"
+                            Content="{loc:Loc backup.restore}">
+                            <ui:Button.Icon>
+                                <ui:SymbolIcon Symbol="ArrowUndo24" />
+                            </ui:Button.Icon>
+                        </ui:Button>
+                        <ui:Button Command="{Binding OpenBackupFolderCommand}" Content="{loc:Loc tools.openFolder}" />
                     </StackPanel>
                 </StackPanel>
             </Border>

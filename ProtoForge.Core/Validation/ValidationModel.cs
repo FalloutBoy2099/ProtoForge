@@ -66,7 +66,8 @@ namespace ProtoForge.Core.Validation
 			ArtResolver art,
 			ChoiceCatalog choices,
 			AiPacketCatalog aiPackets,
-			Int32 scriptCount)
+			Int32 scriptCount,
+		IReadOnlyList<String>? scriptNames = null)
 		{
 			Catalog = catalog;
 			Files = files;
@@ -76,6 +77,7 @@ namespace ProtoForge.Core.Validation
 			Choices = choices;
 			AiPackets = aiPackets;
 			ScriptCount = scriptCount;
+			ScriptNames = scriptNames ?? [];
 		}
 
 		public ProtoCatalog Catalog { get; }
@@ -94,6 +96,9 @@ namespace ProtoForge.Core.Validation
 
 		/// <summary>Number of lines in <c>scripts/scripts.lst</c> (0 when unknown).</summary>
 		public Int32 ScriptCount { get; }
+
+		/// <summary>The file names listed by <c>scripts/scripts.lst</c>, in order (empty when unknown).</summary>
+		public IReadOnlyList<String> ScriptNames { get; }
 	}
 
 	/// <summary>
@@ -161,6 +166,15 @@ namespace ProtoForge.Core.Validation
 			["ArtTypeMismatch"] = "{0} has art type {1} but {2} is expected.",
 			["RuleFailed"] = "A validation rule failed: {0}",
 			["InvalidChoice"] = "{0} = {1} is not a known value.",
+			["ScriptFileMissing"] = "Script {0} ('{1}') is listed in scripts.lst but the file scripts/{1} was not found.",
+			["ReferenceMissing"] = "{0} points at {1}, which does not exist.",
+			["ReferenceWrongKind"] = "{0} points at {1}, which is not a {2} prototype.",
+			["NoInventoryArt"] = "The item has no inventory image: it will show nothing in the inventory.",
+			["BurstExceedsMagazine"] = "A burst fires {0} rounds but the magazine holds only {1}.",
+			["WeaponWithoutAmmo"] = "The weapon uses ammunition but has no default ammo.",
+			["ZeroApCost"] = "The primary attack costs 0 action points.",
+			["ZeroRange"] = "The primary attack has a range of 0.",
+			["AmmoWithoutWeapon"] = "No weapon uses caliber {0}: this ammo cannot be loaded into anything.",
 		};
 
 		public static String Format(String code, params Object[] arguments)

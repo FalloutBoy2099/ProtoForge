@@ -911,7 +911,7 @@
                                 ToolTip="{loc:Loc usage.hint}">
                                 <ui:DataGrid.Columns>
                                     <DataGridTextColumn
-                                        Width="190"
+                                        Width="170"
                                         Binding="{Binding Relation}"
                                         ElementStyle="{StaticResource CellText}"
                                         Header="{loc:Loc usage.relation}" />
@@ -919,7 +919,7 @@
                                         Width="*"
                                         MinWidth="140"
                                         Binding="{Binding Name}"
-                                        ElementStyle="{StaticResource CellText}"
+                                        ElementStyle="{StaticResource WrapCellText}"
                                         Header="{loc:Loc col.name}" />
                                     <DataGridTextColumn
                                         Width="110"

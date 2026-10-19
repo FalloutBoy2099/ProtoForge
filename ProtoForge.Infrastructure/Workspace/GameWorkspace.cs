@@ -112,6 +112,33 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		public IReadOnlyList<String> ScriptNames { get; }
 
+		private readonly CancellationTokenSource _lifetime = new();
+		private Task<ReferenceIndex>? _referenceIndex;
+
+		/// <summary>
+		/// What the maps and the scripts of the game say about the prototypes (where they are placed, which scripts name them). Built on the first
+		/// call, in the background, from the kinds the prototypes have now; every later call gets the same result.
+		/// </summary>
+		public Task<ReferenceIndex> GetReferenceIndexAsync()
+		{
+			if (_referenceIndex is null)
+			{
+				Dictionary<Int32, ProtoKind> kinds = [];
+				foreach (ProtoEntry entry in Catalog.All)
+				{
+					if (entry.Kind is { } kind)
+					{
+						kinds[entry.Pid.Value] = kind;
+					}
+				}
+
+				CancellationToken token = _lifetime.Token;
+				_referenceIndex = Task.Run(() => ReferenceIndex.Build(Files, kinds, null, token), token);
+			}
+
+			return _referenceIndex;
+		}
+
 		public Palette Palette { get; }
 
 		public UndoManager Undo { get; }
@@ -542,7 +569,7 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		public IReadOnlyList<ValidationIssue> Validate(IEnumerable<ProtoEntry>? entries = null, IProgress<Double>? progress = null, CancellationToken cancellationToken = default)
 		{
-			ValidationContext context = _validationContext ??= new ValidationContext(Catalog, Files, Messages, Texts, Art, Choices, AiPackets, ScriptNames.Count);
+			ValidationContext context = _validationContext ??= new ValidationContext(Catalog, Files, Messages, Texts, Art, Choices, AiPackets, ScriptNames.Count, ScriptNames);
 			return _validation.Run(context, entries ?? Catalog.All, progress, cancellationToken);
 		}
 
@@ -614,7 +641,7 @@ namespace ProtoForge.Infrastructure.Workspace
 		public SaveResult Save(SavePlan plan, IProgress<Double>? progress = null)
 		{
 			List<String> errors = [];
-			String? backupFolder = null;
+			BackupRecorder backup = new(plan.OutputFolder);
 			Int32 written = 0;
 
 			for (Int32 i = 0; i < plan.Items.Count; i++)
@@ -630,15 +657,13 @@ namespace ProtoForge.Infrastructure.Workspace
 				}
 
 				String temp = target + ".protoforge-tmp";
+				Boolean existed = File.Exists(target);
 				try
 				{
-					if (File.Exists(target) && (Options.BackupBeforeSave || item.Kind == SaveItemKind.DeleteOverride))
+					if (existed && (Options.BackupBeforeSave || item.Kind == SaveItemKind.DeleteOverride))
 					{
 						// A deleted override is always backed up: it is the only copy of that work.
-						backupFolder ??= CreateBackupFolder(plan.OutputFolder);
-						String backup = Path.Combine(backupFolder, item.AbsolutePath is null ? item.VirtualPath.Replace('/', Path.DirectorySeparatorChar) : Path.Combine("external", Path.GetFileName(item.AbsolutePath)));
-						Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
-						File.Copy(target, backup, overwrite: true);
+						backup.Keep(target, item.VirtualPath, item.AbsolutePath, item.Kind == SaveItemKind.DeleteOverride ? BackupAction.Deleted : BackupAction.Replaced);
 					}
 
 					if (File.Exists(target))
@@ -671,6 +696,12 @@ namespace ProtoForge.Infrastructure.Workspace
 						File.SetAttributes(target, FileAttributes.ReadOnly);
 					}
 
+					if (!existed && Options.BackupBeforeSave)
+					{
+						// A new file has nothing to copy, but restoring the backup has to remove it.
+						backup.Created(item.VirtualPath, item.AbsolutePath);
+					}
+
 					written++;
 				}
 				catch (Exception ex) when (ex is not OutOfMemoryException)
@@ -679,6 +710,19 @@ namespace ProtoForge.Infrastructure.Workspace
 				}
 
 				progress?.Report((Double)(i + 1) / plan.Items.Count);
+			}
+
+			try
+			{
+				backup.Commit();
+				if (backup.Folder is not null)
+				{
+					BackupManager.Prune(plan.OutputFolder);
+				}
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				errors.Add($"{BackupManager.FolderName}: {UserTexts.Describe(ex)}");
 			}
 
 			if (errors.Count == 0)
@@ -707,26 +751,13 @@ namespace ProtoForge.Infrastructure.Workspace
 			}
 
 			Files.Invalidate();
-			return new SaveResult(written, backupFolder, errors);
+			return new SaveResult(written, backup.Folder, errors);
 		}
 
 		private static Boolean FileExistsInOutput(String output, String virtualPath)
 		{
 			String? path = GamePath.ResolveInside(output, virtualPath);
 			return path is not null && File.Exists(path);
-		}
-
-		/// <summary>A backup folder that does not exist yet (two saves within the same second must not share one).</summary>
-		private static String CreateBackupFolder(String output)
-		{
-			String stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
-			String folder = Path.Combine(output, ".protoforge-backup", stamp);
-			for (Int32 suffix = 2; Directory.Exists(folder); suffix++)
-			{
-				folder = Path.Combine(output, ".protoforge-backup", $"{stamp}-{suffix}");
-			}
-
-			return folder;
 		}
 
 		private static void TryDelete(String path)
@@ -745,6 +776,7 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		public void Dispose()
 		{
+			_lifetime.Cancel();
 			Files.Dispose();
 		}
 
