@@ -784,7 +784,9 @@ namespace ProtoForge.UI.ViewModels
 
 			ProtoEntry entry = entries[0];
 			Title = entry.Name.Length > 0 ? entry.Name : entry.FileName;
-			Subtitle = $"{Loc.Get("kind." + entry.Kind)}  ·  {entry.Pid}  ·  {entry.FileName}  ·  {entry.SourceName}";
+			IReadOnlyList<String> scripts = _workspace.ScriptNames;
+			String script = entry.ScriptIndex >= 0 && entry.ScriptIndex < scripts.Count ? $"  ·  {Loc.Get("col.script")} {System.IO.Path.GetFileNameWithoutExtension(scripts[entry.ScriptIndex])}" : String.Empty;
+			Subtitle = $"{Loc.Get("kind." + entry.Kind)}  ·  {entry.Pid}  ·  {entry.FileName}  ·  {entry.SourceName}{script}";
 			Name = entry.Name;
 			Description = entry.Description;
 			UpdatePreviews(entry);

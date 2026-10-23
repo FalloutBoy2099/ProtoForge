@@ -108,6 +108,12 @@ namespace ProtoForge.Core.Domain
 			get { return _name.Length > 0 ? _name : $"<{_fileName}>"; }
 		}
 
+		/// <summary>The line of <c>scripts.lst</c> (counted from 0) of the script of the prototype, or -1 when it has none.</summary>
+		public Int32 ScriptIndex
+		{
+			get { return _file?.TryGet(FieldKeys.ScriptId) is { } id && id != -1 ? id & 0xFFFFFF : -1; }
+		}
+
 		public String Description
 		{
 			get { return _description; }

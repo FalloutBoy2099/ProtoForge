@@ -151,7 +151,7 @@ namespace ProtoForge.UI.ViewModels.Fields
 
 	/// <summary>
 	/// A script id: the high byte is the script type (3 = item/scenery, 4 = critter) and the low 24 bits the number of the line of
-	/// <c>scripts.lst</c>, counted from 1. Changing the script keeps the existing type byte.
+	/// <c>scripts.lst</c>, counted from 0. Changing the script keeps the existing type byte.
 	/// </summary>
 	public sealed partial class ScriptFieldViewModel : FieldViewModel
 	{
@@ -174,7 +174,8 @@ namespace ProtoForge.UI.ViewModels.Fields
 			IReadOnlyList<String> scripts = Context.Workspace.ScriptNames;
 			for (Int32 i = 0; i < scripts.Count; i++)
 			{
-				options.Add(new ScriptOption(i + 1, $"{i + 1}: {scripts[i]}"));
+				String description = Context.Workspace.GetScriptDescription(i);
+				options.Add(new ScriptOption(i, description.Length > 0 ? $"{i}: {scripts[i]} — {description}" : $"{i}: {scripts[i]}"));
 			}
 
 			if (values.Count == 0 || IsMixed)

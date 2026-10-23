@@ -16,6 +16,12 @@ namespace ProtoForge.Core.Editing
 
 		/// <summary>The value is multiplied by the operand (rounded to the nearest whole number).</summary>
 		Multiply,
+
+		/// <summary>Turns on the flag whose mask is the operand (the flags that exclude it are turned off).</summary>
+		SetFlag,
+
+		/// <summary>Turns off the flag whose mask is the operand.</summary>
+		ClearFlag,
 	}
 
 	public enum BulkComparison
@@ -34,12 +40,30 @@ namespace ProtoForge.Core.Editing
 	/// <summary>The new value of one field of one prototype.</summary>
 	public sealed record BulkChange(ProtoEntry Entry, Int32 OldValue, Int32 NewValue);
 
-	/// <summary>Changes one number field of many prototypes by a rule ("multiply the damage of every weapon whose range is above 20 by 1.2").</summary>
+	/// <summary>Changes one number, choice or flag of many prototypes by a rule ("multiply the damage of every weapon whose range is above 20 by 1.2").</summary>
 	public static class BulkEditor
 	{
-		/// <summary>The value after the operation, kept inside the range the field accepts.</summary>
+		/// <summary>The value after the operation: numbers are kept inside the range the field accepts, a choice takes the operand, a flag is turned on or off.</summary>
 		public static Int32 Compute(ProtoField field, BulkOperation operation, Double operand, Int32 current)
 		{
+			if (operation is BulkOperation.SetFlag or BulkOperation.ClearFlag)
+			{
+				UInt32 mask = unchecked((UInt32)(Int64)operand);
+				UInt32 value = unchecked((UInt32)current);
+				if (operation == BulkOperation.ClearFlag)
+				{
+					return unchecked((Int32)(value & ~mask));
+				}
+
+				UInt32 conflicts = field.FlagSet is { } id && FlagSets.TryGet(id, out FlagSet set) ? set.GetConflicts(mask) : 0;
+				return unchecked((Int32)((value | mask) & ~conflicts));
+			}
+
+			if (field.Editor != FieldEditor.Number)
+			{
+				return (Int32)operand;
+			}
+
 			Double result = operation switch
 			{
 				BulkOperation.Set => operand,
@@ -64,10 +88,11 @@ namespace ProtoForge.Core.Editing
 			};
 		}
 
-		/// <summary>The fields a bulk edit can change: the plain numbers of a prototype (not the bits, choices, images or flags).</summary>
+		/// <summary>The fields a bulk edit can change: the plain numbers, the choices (a damage type, an animation...) and the flags of a prototype.</summary>
 		public static IReadOnlyList<ProtoField> GetEditableFields(ProtoKind kind)
 		{
-			return [.. ProtoSchemas.For(kind).Fields.Where(f => f.Editor == FieldEditor.Number && !f.IsVirtual && !f.IsReadOnly && f.Key != FieldKeys.ProtoId)];
+			return [.. ProtoSchemas.For(kind).Fields.Where(f => !f.IsReadOnly && f.Key != FieldKeys.ProtoId
+				&& ((f.Editor == FieldEditor.Number && !f.IsVirtual) || (f.Editor == FieldEditor.Choice && f.ChoiceSet is not null) || (f.Editor == FieldEditor.Flags && f.FlagSet is not null)))];
 		}
 
 		/// <summary>
@@ -77,7 +102,7 @@ namespace ProtoForge.Core.Editing
 		public static IReadOnlyList<BulkChange> Plan(IEnumerable<ProtoEntry> entries, ProtoKind kind, String fieldKey, BulkOperation operation, Double operand, BulkCondition? condition = null)
 		{
 			ProtoField? field = ProtoSchemas.For(kind).Find(fieldKey);
-			if (field is null || field.Editor != FieldEditor.Number)
+			if (field is null || field.Editor is not (FieldEditor.Number or FieldEditor.Choice or FieldEditor.Flags))
 			{
 				return [];
 			}

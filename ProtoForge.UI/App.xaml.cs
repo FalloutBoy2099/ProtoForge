@@ -9,6 +9,7 @@ namespace ProtoForge.UI
 	using Wpf.Ui;
 	using Wpf.Ui.Abstractions;
 	using ProtoForge.Infrastructure.Settings;
+	using ProtoForge.Infrastructure.Rules;
 	using ProtoForge.Infrastructure.Templates;
 	using Services;
 	using ViewModels;
@@ -85,6 +86,7 @@ namespace ProtoForge.UI
 		{
 			services.AddSingleton(settings);
 			services.AddSingleton<UserTemplateStore>();
+			services.AddSingleton<BulkRuleStore>();
 
 			services.AddSingleton<INavigationViewPageProvider, DependencyInjectionPageProvider>();
 			services.AddSingleton<IContentDialogService, ContentDialogService>();
@@ -111,6 +113,8 @@ namespace ProtoForge.UI
 			services.AddSingleton<MessagesViewModel>();
 			services.AddSingleton<BalancePage>();
 			services.AddSingleton<BalanceViewModel>();
+			services.AddSingleton<MapsPage>();
+			services.AddSingleton<MapsViewModel>();
 			services.AddSingleton<ToolsPage>();
 			services.AddSingleton<ToolsViewModel>();
 			services.AddSingleton<AiPacketsPage>();

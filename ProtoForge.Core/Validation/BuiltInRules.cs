@@ -201,7 +201,7 @@ namespace ProtoForge.Core.Validation
 		}
 	}
 
-	/// <summary>Script ids must exist in scripts.lst (the low 24 bits are the line number, counted from 1).</summary>
+	/// <summary>Script ids must exist in scripts.lst (the low 24 bits are the number of the line, counted from 0).</summary>
 	public sealed class ScriptRule : ValidationRuleBase
 	{
 		public override String Id
@@ -218,11 +218,11 @@ namespace ProtoForge.Core.Validation
 			}
 
 			Int32 index = script.Value & 0xFFFFFF;
-			if (index < 1 || index > context.ScriptCount)
+			if (index >= context.ScriptCount)
 			{
 				sink.Report(Severity.Error, "ScriptOutOfRange", entry, FieldKeys.ScriptId, index, context.ScriptCount);
 			}
-			else if (index <= context.ScriptNames.Count && context.ScriptNames[index - 1] is { Length: > 0 } name && !context.Files.Exists("scripts/" + (name.Contains('.', StringComparison.Ordinal) ? name : name + ".int")))
+			else if (index < context.ScriptNames.Count && context.ScriptNames[index] is { Length: > 0 } name && !context.Files.Exists("scripts/" + (name.Contains('.', StringComparison.Ordinal) ? name : name + ".int")))
 			{
 				sink.Report(Severity.Warning, "ScriptFileMissing", entry, FieldKeys.ScriptId, index, name);
 			}

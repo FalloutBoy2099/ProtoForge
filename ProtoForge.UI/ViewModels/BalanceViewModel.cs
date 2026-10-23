@@ -244,6 +244,11 @@ namespace ProtoForge.UI.ViewModels
 			_shell.ShowProto(row.Entry.Pid);
 		}
 
+		public void Show(ProtoEntry entry)
+		{
+			_shell.ShowProto(entry.Pid);
+		}
+
 		/// <summary>Reads the tables again from the open game (also called when the page is shown, after edits made elsewhere).</summary>
 		public void Refresh()
 		{
@@ -322,6 +327,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 
 			Simulate();
+			RefreshMatrix();
 		}
 
 		private static void MarkOutliers<T>(IReadOnlyList<T> rows, Func<T, Double?> metric, Action<T, Boolean> mark)
@@ -358,9 +364,19 @@ namespace ProtoForge.UI.ViewModels
 		protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
 		{
 			base.OnPropertyChanged(e);
-			if (e.PropertyName is { } name && name.StartsWith("Sim", StringComparison.Ordinal) && name is not (nameof(SimLines) or nameof(SimWeapon)))
+			if (e.PropertyName is { } name)
 			{
-				Simulate();
+				if (name.StartsWith("Sim", StringComparison.Ordinal) && name is not (nameof(SimLines) or nameof(SimWeapon)))
+				{
+					Simulate();
+				}
+
+				// The table of weapons against armors uses the attacker described in the simulation.
+				if ((name.StartsWith("Sim", StringComparison.Ordinal) && name is not (nameof(SimLines) or nameof(SimWeapon) or nameof(SimAmmo) or nameof(SimTarget) or nameof(SimThreshold) or nameof(SimResistance) or nameof(SimHitPoints) or nameof(SimBurst)))
+					|| name is nameof(MatrixMetricIndex) or nameof(MatrixBurst))
+				{
+					RefreshMatrix();
+				}
 			}
 		}
 
@@ -381,48 +397,15 @@ namespace ProtoForge.UI.ViewModels
 			Int32 resistance = SimResistance is { } r ? (Int32)r : targetDr;
 			Int32 hitPoints = SimHitPoints is { } h ? (Int32)h : targetHp;
 			Int32 armorClass = SimArmorClass is { } a ? (Int32)a : targetAc;
-			Int32 rounds = SimBurst ? Math.Max(1, weapon.TryGet("BurstRounds") ?? 1) : 1;
-
-			CombatInput damage = new(
-				weapon.TryGet(FieldKeys.MinDamage) ?? 0,
-				weapon.TryGet(FieldKeys.MaxDamage) ?? 0,
-				ammo?.TryGet(FieldKeys.DamageMultiplier) ?? 1,
-				ammo?.TryGet(FieldKeys.DamageDivisor) ?? 1,
-				ammo?.TryGet("DamageResistanceModifier") ?? 0,
-				threshold,
-				resistance,
-				rounds,
-				hitPoints,
-				(Int32)(SimDamageBonus ?? 0));
+			(CombatInput damage, HitInput hit) = BuildCombat(weapon, ammo, threshold, resistance, hitPoints, armorClass, SimBurst, SimPerkIndex switch
+			{
+				1 => CombatSimulator.PerkAccurate,
+				2 => CombatSimulator.PerkLongRange,
+				3 => CombatSimulator.PerkScopeRange,
+				_ => -1,
+			});
+			Int32 rounds = damage.Rounds;
 			CombatResult result = CombatSimulator.Calculate(damage);
-
-			// The attack mode of the weapon decides whether the distance matters: throwing and firing are ranged, punching and swinging are not.
-			Boolean ranged = SimBurst || (weapon.TryGet("PrimaryAttackMode") ?? 0) >= 5;
-			Int32 luck = (Int32)(SimLuck ?? 0);
-			HitInput hit = new(
-				(Int32)(SimSkill ?? 0),
-				(Int32)(SimPerception ?? 0),
-				(Int32)(SimStrength ?? 0),
-				weapon.TryGet("MinStrength") ?? 0,
-				(Int32)(SimDistance ?? 0),
-				ranged,
-				SimPlayer,
-				(Int32)(SimSharpshooter ?? 0),
-				SimPerkIndex switch
-				{
-					1 => CombatSimulator.PerkAccurate,
-					2 => CombatSimulator.PerkLongRange,
-					3 => CombatSimulator.PerkScopeRange,
-					_ => -1,
-				},
-				armorClass,
-				ammo?.TryGet("ArmorClassModifier") ?? 0,
-				(AimedLocation)Math.Clamp(SimLocationIndex, 0, 5),
-				(Int32)(SimCriticalChance ?? luck),
-				SimSniper,
-				luck,
-				SimCriticalMultiplier ?? 2,
-				0);
 			ExpectedResult expected = CombatSimulator.Estimate(damage, hit);
 
 			String damageType = _workspaceService.Current?.Choices.Get(ChoiceCatalog.DamageType).Where(o => o.Value == typeIndex).Select(o => o.Label).FirstOrDefault() ?? suffix;

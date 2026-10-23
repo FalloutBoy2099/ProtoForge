@@ -246,6 +246,11 @@
                         <ui:SymbolIcon Symbol="DataBarVertical24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="{loc:Loc nav.maps}" TargetPageType="{x:Type views:MapsPage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Map24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
                 <ui:NavigationViewItem Content="{loc:Loc nav.ai}" TargetPageType="{x:Type views:AiPacketsPage}">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Bot24" />

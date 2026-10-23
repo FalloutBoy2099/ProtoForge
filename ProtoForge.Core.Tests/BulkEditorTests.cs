@@ -68,17 +68,44 @@ namespace ProtoForge.Core.Tests
 		}
 
 		[Fact]
-		public void OtherKindsAreLeftAlone_AndOnlyPlainNumbersCanBeEdited()
+		public void OtherKindsAreLeftAlone_AndImagesAndTextsCannotBeEdited()
 		{
 			List<ProtoEntry> entries = Weapons((10, 1));
 
 			Assert.Empty(BulkEditor.Plan(entries, ProtoKind.Armor, "ArmorClass", BulkOperation.Add, 1));
-			Assert.Empty(BulkEditor.Plan(entries, ProtoKind.Weapon, FieldKeys.Flags, BulkOperation.Set, 1));
+			Assert.Empty(BulkEditor.Plan(entries, ProtoKind.Weapon, FieldKeys.FrmId, BulkOperation.Set, 1));
 
 			IReadOnlyList<ProtoField> fields = BulkEditor.GetEditableFields(ProtoKind.Weapon);
 			Assert.Contains(fields, f => f.Key == FieldKeys.MaxDamage);
-			Assert.DoesNotContain(fields, f => f.Key == FieldKeys.Flags);
-			Assert.DoesNotContain(fields, f => f.Editor != FieldEditor.Number);
+			Assert.Contains(fields, f => f.Key == "DamageType" && f.Editor == FieldEditor.Choice);
+			Assert.Contains(fields, f => f.Key == FieldKeys.Flags && f.Editor == FieldEditor.Flags);
+			Assert.DoesNotContain(fields, f => f.Editor is FieldEditor.Art or FieldEditor.Proto or FieldEditor.Message or FieldEditor.Script);
+		}
+
+		[Fact]
+		public void Flags_AreTurnedOnAndOff_AndTheExclusiveOnesAreSwitched()
+		{
+			ProtoField flags = ProtoSchemas.For(ProtoKind.Weapon).Require(FieldKeys.Flags);
+			const Int32 flat = 0x00000008;
+			const Int32 transparentRed = 0x00004000;
+			const Int32 transparentWall = 0x00010000;
+
+			Assert.Equal(flat, BulkEditor.Compute(flags, BulkOperation.SetFlag, flat, 0));
+			Assert.Equal(0, BulkEditor.Compute(flags, BulkOperation.ClearFlag, flat, flat));
+			Assert.Equal(transparentWall, BulkEditor.Compute(flags, BulkOperation.SetFlag, transparentWall, transparentRed));
+			Assert.Equal(unchecked((Int32)0x80000008), BulkEditor.Compute(flags, BulkOperation.SetFlag, 0x80000000u, flat));
+		}
+
+		[Fact]
+		public void Choice_TakesTheValue_AndOnlyTheChangedPrototypesAreListed()
+		{
+			List<ProtoEntry> entries = Weapons((10, 1), (10, 1));
+			entries[1].File!.TrySet("DamageType", 3);
+
+			IReadOnlyList<BulkChange> plan = BulkEditor.Plan(entries, ProtoKind.Weapon, "DamageType", BulkOperation.Set, 3);
+
+			Assert.Equal(entries[0], Assert.Single(plan).Entry);
+			Assert.Equal(3, plan[0].NewValue);
 		}
 	}
 }

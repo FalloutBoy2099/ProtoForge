@@ -324,6 +324,94 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="{loc:Loc balance.matrix}">
+                <Grid Margin="0,8,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc balance.matrixHint}"
+                        TextWrapping="Wrap" />
+                    <StackPanel
+                        Grid.Row="1"
+                        Margin="0,0,0,8"
+                        Orientation="Horizontal">
+                        <ComboBox
+                            Width="280"
+                            Margin="0,0,12,0"
+                            AutomationProperties.Name="{loc:Loc balance.matrix}"
+                            SelectedIndex="{Binding MatrixMetricIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="{loc:Loc balance.matrixPerAttack}" />
+                            <ComboBoxItem Content="{loc:Loc balance.matrixPerAp}" />
+                        </ComboBox>
+                        <CheckBox
+                            VerticalAlignment="Center"
+                            Content="{loc:Loc balance.matrixBurst}"
+                            IsChecked="{Binding MatrixBurst, Mode=TwoWay}" />
+                    </StackPanel>
+                    <ui:DataGrid
+                        Grid.Row="2"
+                        AutoGenerateColumns="False"
+                        AutomationProperties.Name="{loc:Loc balance.matrix}"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        GridLinesVisibility="None"
+                        HeadersVisibility="Column"
+                        IsReadOnly="True"
+                        ItemsSource="{Binding MatrixRows}"
+                        MouseDoubleClick="OnMatrixDoubleClick"
+                        SelectionMode="Single">
+                        <ui:DataGrid.Columns>
+                            <DataGridTextColumn
+                                Width="190"
+                                Binding="{Binding Name}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.name}" />
+                            <DataGridTextColumn
+                                x:Name="MatrixColumn0"
+                                Width="*"
+                                MinWidth="100"
+                                Binding="{Binding V0, StringFormat={}{0:0.#}}"
+                                ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn
+                                x:Name="MatrixColumn1"
+                                Width="*"
+                                MinWidth="100"
+                                Binding="{Binding V1, StringFormat={}{0:0.#}}"
+                                ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn
+                                x:Name="MatrixColumn2"
+                                Width="*"
+                                MinWidth="100"
+                                Binding="{Binding V2, StringFormat={}{0:0.#}}"
+                                ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn
+                                x:Name="MatrixColumn3"
+                                Width="*"
+                                MinWidth="100"
+                                Binding="{Binding V3, StringFormat={}{0:0.#}}"
+                                ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn
+                                x:Name="MatrixColumn4"
+                                Width="*"
+                                MinWidth="100"
+                                Binding="{Binding V4, StringFormat={}{0:0.#}}"
+                                ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn
+                                x:Name="MatrixColumn5"
+                                Width="*"
+                                MinWidth="100"
+                                Binding="{Binding V5, StringFormat={}{0:0.#}}"
+                                ElementStyle="{StaticResource CellText}" />
+                        </ui:DataGrid.Columns>
+                    </ui:DataGrid>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="{loc:Loc balance.simulation}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel

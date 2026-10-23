@@ -5,6 +5,7 @@ namespace ProtoForge.UI.ViewModels
 	using System.Linq;
 	using System.Threading.Tasks;
 	using CommunityToolkit.Mvvm.ComponentModel;
+	using CommunityToolkit.Mvvm.Input;
 	using ProtoForge.Core.Domain;
 	using ProtoForge.Infrastructure.Workspace;
 	using Services;
@@ -48,6 +49,17 @@ namespace ProtoForge.UI.ViewModels
 			{
 				Rows = [];
 				Summary = String.Empty;
+			}
+		}
+
+		/// <summary>Reads the maps and the scripts again (they may have changed on the disk) and searches again.</summary>
+		[RelayCommand]
+		private async Task RefreshReferences()
+		{
+			_workspace.InvalidateReferenceIndex();
+			if (IsActive)
+			{
+				await RefreshAsync();
 			}
 		}
 
@@ -133,18 +145,19 @@ namespace ProtoForge.UI.ViewModels
 
 		private static UsageRow ToRow(UsageRef u)
 		{
-			String name = u.Kind switch
+			// A map or a script is named in the "name" column, the counts are the detail.
+			String detail = u.Kind switch
 			{
-				UsageKind.PlacedOnMap when u.Count > 0 && u.SecondCount > 0 => Loc.Format("usage.mapBoth", u.Detail, u.Count, u.SecondCount),
-				UsageKind.PlacedOnMap when u.Count > 0 => Loc.Format("usage.mapPlaced", u.Detail, u.Count),
-				UsageKind.PlacedOnMap => Loc.Format("usage.mapCarried", u.Detail, u.SecondCount),
-				UsageKind.ScriptOnMap => Loc.Format("usage.mapScript", u.Detail, u.Count),
-				_ => u.Entry is null ? u.Detail : u.Entry.DisplayName,
+				UsageKind.PlacedOnMap when u.Count > 0 && u.SecondCount > 0 => Loc.Format("usage.mapBoth", u.Count, u.SecondCount),
+				UsageKind.PlacedOnMap when u.Count > 0 => Loc.Format("usage.mapPlaced", u.Count),
+				UsageKind.PlacedOnMap => Loc.Format("usage.mapCarried", u.SecondCount),
+				UsageKind.ScriptOnMap => Loc.Format("usage.mapScript", u.Count),
+				_ => u.FieldKey.Length == 0 ? String.Empty : Loc.Field(u.FieldKey),
 			};
 			return new UsageRow(
 				Loc.Get("usage." + u.Kind),
-				u.FieldKey.Length == 0 ? String.Empty : Loc.Field(u.FieldKey),
-				name,
+				detail,
+				u.Entry is null ? u.Detail : u.Entry.DisplayName,
 				u.Entry is null ? String.Empty : u.Entry.Pid.ToString(),
 				u.Entry?.SourceName ?? String.Empty,
 				u.Entry);

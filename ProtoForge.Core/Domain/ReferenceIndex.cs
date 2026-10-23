@@ -16,7 +16,7 @@ namespace ProtoForge.Core.Domain
 	/// </summary>
 	public sealed class ReferenceIndex
 	{
-		private ReferenceIndex(IReadOnlyList<MapSummary> maps, IReadOnlyList<String> unreadableMaps, IReadOnlyDictionary<Int32, List<String>> scriptsByPid, Int32 scriptCount)
+		public ReferenceIndex(IReadOnlyList<MapSummary> maps, IReadOnlyList<String> unreadableMaps, IReadOnlyDictionary<Int32, List<String>> scriptsByPid, Int32 scriptCount)
 		{
 			Maps = maps;
 			UnreadableMaps = unreadableMaps;

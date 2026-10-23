@@ -17,6 +17,7 @@ namespace ProtoForge.UI.ViewModels
 	using ProtoForge.Core.Reference;
 	using ProtoForge.Core.Templates;
 	using ProtoForge.Infrastructure.Plugins;
+	using ProtoForge.Infrastructure.Rules;
 	using ProtoForge.Infrastructure.Settings;
 	using ProtoForge.Infrastructure.Templates;
 	using ProtoForge.Infrastructure.Workspace;
@@ -50,6 +51,7 @@ namespace ProtoForge.UI.ViewModels
 		private readonly ExchangeService _exchange;
 		private readonly SettingsService _settings;
 		private readonly UserTemplateStore _templates;
+		private readonly BulkRuleStore _bulkRuleStore;
 		private readonly IDialogService _dialogs;
 		private readonly INotifier _notifier;
 		private readonly ShellNavigator _shell;
@@ -107,13 +109,14 @@ namespace ProtoForge.UI.ViewModels
 		[ObservableProperty]
 		private String _extractStatus = String.Empty;
 
-		public ToolsViewModel(WorkspaceService workspaceService, ExchangeService exchange, SettingsService settings, UserTemplateStore templates, IDialogService dialogs, INotifier notifier, ShellNavigator shell)
+		public ToolsViewModel(WorkspaceService workspaceService, ExchangeService exchange, SettingsService settings, UserTemplateStore templates, BulkRuleStore bulkRuleStore, IDialogService dialogs, INotifier notifier, ShellNavigator shell)
 		{
 			_shell = shell;
 			_workspaceService = workspaceService;
 			_exchange = exchange;
 			_settings = settings;
 			_templates = templates;
+			_bulkRuleStore = bulkRuleStore;
 			_dialogs = dialogs;
 			_notifier = notifier;
 

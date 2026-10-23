@@ -573,7 +573,7 @@ namespace ProtoForge.UI.ViewModels
 			}
 
 			GameWorkspace workspace = _workspace;
-			ProtoFilter filter = new(SearchText)
+			ProtoFilter filter = new(SearchText, workspace.ScriptNames)
 			{
 				Types = SelectedTypeFilter?.Type is { } type ? new HashSet<ProtoObjectType> { type } : null,
 				Kinds = KindFilter is { } kind ? new HashSet<ProtoKind> { kind } : null,

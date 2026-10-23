@@ -98,11 +98,10 @@ namespace ProtoForge.Core.Domain
 				}
 			}
 
-			Int32 scriptNumber = script == -1 ? 0 : script & 0xFFFFFF;
-			if (scriptNumber > 0 && scriptNames is not null && scriptNumber <= scriptNames.Count)
+			Int32 scriptIndex = script == -1 ? -1 : script & 0xFFFFFF;
+			if (scriptIndex >= 0 && scriptNames is not null && scriptIndex < scriptNames.Count)
 			{
-				// The numbers of scripts.lst count from 1.
-				result.Add(new UsageRef(UsageKind.Uses, FieldKeys.ScriptId, null, $"{scriptNumber}: {scriptNames[scriptNumber - 1]}"));
+				result.Add(new UsageRef(UsageKind.Uses, FieldKeys.ScriptId, null, $"{scriptIndex}: {scriptNames[scriptIndex]}"));
 			}
 
 			Dictionary<UsageKind, Int32> counts = [];
@@ -150,13 +149,13 @@ namespace ProtoForge.Core.Domain
 
 			if (index is not null)
 			{
-				AddMapAndScriptUsage(result, index, pid, scriptNumber);
+				AddMapAndScriptUsage(result, index, pid, scriptIndex);
 			}
 
 			return result;
 		}
 
-		private static void AddMapAndScriptUsage(List<UsageRef> result, ReferenceIndex index, Int32 pid, Int32 scriptNumber)
+		private static void AddMapAndScriptUsage(List<UsageRef> result, ReferenceIndex index, Int32 pid, Int32 scriptIndex)
 		{
 			Int32 placedMaps = 0;
 			Int32 scriptMaps = 0;
@@ -169,7 +168,7 @@ namespace ProtoForge.Core.Domain
 					result.Add(new UsageRef(UsageKind.PlacedOnMap, String.Empty, null, map.FileName, placed, carried));
 				}
 
-				Int32 instances = scriptNumber > 0 ? map.Scripts.GetValueOrDefault(scriptNumber) + (map.MapScript == scriptNumber ? 1 : 0) : 0;
+				Int32 instances = scriptIndex >= 0 ? map.Scripts.GetValueOrDefault(scriptIndex) + (map.MapScript == scriptIndex ? 1 : 0) : 0;
 				if (instances > 0 && scriptMaps++ < MaxPerKind)
 				{
 					result.Add(new UsageRef(UsageKind.ScriptOnMap, FieldKeys.ScriptId, null, map.FileName, instances));

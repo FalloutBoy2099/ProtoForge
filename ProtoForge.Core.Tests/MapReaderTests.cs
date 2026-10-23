@@ -192,9 +192,9 @@ namespace ProtoForge.Core.Tests
 			Assert.Empty(index.UnreadableMaps);
 			Assert.True(index.Maps.Count > 100);
 
-			// The script of a map is the line of scripts.lst that carries its name (the numbers count from 1).
+			// The script of a map is the line of scripts.lst that carries its name.
 			MapSummary abbey = index.Maps.First(m => m.FileName.Equals("abbey.map", StringComparison.OrdinalIgnoreCase));
-			Assert.Equal("abbey.int", workspace.ScriptNames[abbey.MapScript - 1].Trim(), ignoreCase: true);
+			Assert.Equal("abbey.int", workspace.ScriptNames[abbey.MapScript].Trim(), ignoreCase: true);
 
 			// A prototype that every game has: a lot of the creatures of Arroyo are on its maps.
 			Assert.Contains(index.Maps, m => m.Placed.Count > 100);

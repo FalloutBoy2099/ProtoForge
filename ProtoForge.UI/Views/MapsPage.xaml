@@ -1,0 +1,207 @@
+﻿<Page
+    x:Class="ProtoForge.UI.Views.MapsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="clr-namespace:ProtoForge.UI.Services"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Maps"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ScrollViewer.CanContentScroll="False">
+
+    <Grid Margin="12,4,12,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Margin="0,0,0,8"
+            Style="{StaticResource PageTitle}"
+            Text="{loc:Loc maps.title}" />
+
+        <StackPanel
+            Grid.Row="1"
+            Margin="0,0,0,8"
+            Orientation="Horizontal">
+            <ui:Button
+                Command="{Binding RefreshCommand}"
+                Content="{loc:Loc maps.refresh}"
+                ToolTip="{loc:Loc maps.refreshTip}">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="ArrowSync24" />
+                </ui:Button.Icon>
+            </ui:Button>
+            <TextBlock
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Style="{StaticResource MutedText}"
+                Text="{Binding Status}" />
+        </StackPanel>
+
+        <TabControl
+            Grid.Row="2"
+            Padding="0"
+            Background="Transparent">
+            <TabItem Header="{loc:Loc maps.tabMaps}">
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="320" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" MinWidth="320" />
+                    </Grid.ColumnDefinitions>
+                    <ui:DataGrid
+                        AutoGenerateColumns="False"
+                        AutomationProperties.Name="{loc:Loc maps.tabMaps}"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        GridLinesVisibility="None"
+                        HeadersVisibility="Column"
+                        IsReadOnly="True"
+                        ItemsSource="{Binding Maps}"
+                        SelectedItem="{Binding SelectedMap, Mode=TwoWay}"
+                        SelectionMode="Single">
+                        <ui:DataGrid.Columns>
+                            <DataGridTextColumn
+                                Width="110"
+                                Binding="{Binding FileName}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.file}" />
+                            <DataGridTextColumn
+                                Width="*"
+                                MinWidth="100"
+                                Binding="{Binding Script}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.script}" />
+                            <DataGridTextColumn
+                                Width="80"
+                                Binding="{Binding Objects}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc maps.objects}" />
+                            <DataGridTextColumn
+                                Width="110"
+                                Binding="{Binding Prototypes}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc maps.prototypes}" />
+                        </ui:DataGrid.Columns>
+                    </ui:DataGrid>
+                    <ui:DataGrid
+                        Grid.Column="2"
+                        AutoGenerateColumns="False"
+                        AutomationProperties.Name="{loc:Loc maps.objectsOfMap}"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        GridLinesVisibility="None"
+                        HeadersVisibility="Column"
+                        IsReadOnly="True"
+                        ItemsSource="{Binding MapObjects}"
+                        MouseDoubleClick="OnObjectDoubleClick"
+                        SelectionMode="Single"
+                        ToolTip="{loc:Loc maps.doubleClick}">
+                        <ui:DataGrid.Columns>
+                            <DataGridTextColumn
+                                Width="*"
+                                MinWidth="120"
+                                Binding="{Binding Name}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.name}" />
+                            <DataGridTextColumn
+                                Width="100"
+                                Binding="{Binding Kind}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.kind}" />
+                            <DataGridTextColumn
+                                Width="110"
+                                Binding="{Binding Pid}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="PID" />
+                            <DataGridTextColumn
+                                Width="70"
+                                Binding="{Binding Placed}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc maps.placed}" />
+                            <DataGridTextColumn
+                                Width="70"
+                                Binding="{Binding Carried}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc maps.carried}" />
+                        </ui:DataGrid.Columns>
+                    </ui:DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="{loc:Loc maps.tabUnused}">
+                <Grid Margin="0,8,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource MutedText}"
+                        Text="{loc:Loc maps.unusedHint}"
+                        TextWrapping="Wrap" />
+                    <StackPanel
+                        Grid.Row="1"
+                        Margin="0,0,0,8"
+                        Orientation="Horizontal">
+                        <ComboBox
+                            Width="180"
+                            AutomationProperties.Name="{loc:Loc maps.unusedType}"
+                            ItemsSource="{Binding UnusedFilterNames}"
+                            SelectedIndex="{Binding UnusedFilterIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource MutedText}"
+                            Text="{Binding UnusedStatus}" />
+                    </StackPanel>
+                    <ui:DataGrid
+                        Grid.Row="2"
+                        AutoGenerateColumns="False"
+                        AutomationProperties.Name="{loc:Loc maps.tabUnused}"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        GridLinesVisibility="None"
+                        HeadersVisibility="Column"
+                        IsReadOnly="True"
+                        ItemsSource="{Binding Unused}"
+                        MouseDoubleClick="OnUnusedDoubleClick"
+                        SelectionMode="Single"
+                        ToolTip="{loc:Loc maps.doubleClick}">
+                        <ui:DataGrid.Columns>
+                            <DataGridTextColumn
+                                Width="*"
+                                MinWidth="150"
+                                Binding="{Binding Name}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.name}" />
+                            <DataGridTextColumn
+                                Width="110"
+                                Binding="{Binding Kind}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.kind}" />
+                            <DataGridTextColumn
+                                Width="120"
+                                Binding="{Binding Pid}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="PID" />
+                            <DataGridTextColumn
+                                Width="110"
+                                Binding="{Binding FileName}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.file}" />
+                            <DataGridTextColumn
+                                Width="130"
+                                Binding="{Binding Source}"
+                                ElementStyle="{StaticResource CellText}"
+                                Header="{loc:Loc col.source}" />
+                        </ui:DataGrid.Columns>
+                    </ui:DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+
+</Page>

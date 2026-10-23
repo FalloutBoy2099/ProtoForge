@@ -25,7 +25,7 @@ namespace ProtoForge.Core.Formats.Map
 
 		public Int32 Version { get; }
 
-		/// <summary>The line number in <c>scripts.lst</c> (from 1) of the script of the map itself, or 0 when it has none.</summary>
+		/// <summary>The line of <c>scripts.lst</c> (counted from 0) of the script of the map itself, or -1 when it has none.</summary>
 		public Int32 MapScript { get; }
 
 		/// <summary>Objects on the map, the ones carried in inventories included.</summary>
@@ -37,7 +37,7 @@ namespace ProtoForge.Core.Formats.Map
 		/// <summary>Prototype id to the number of objects found in the inventories of critters and containers.</summary>
 		public Dictionary<Int32, Int32> Carried { get; } = [];
 
-		/// <summary>Line number in <c>scripts.lst</c> (from 1) to the number of script instances of the map that use it.</summary>
+		/// <summary>Line of <c>scripts.lst</c> (counted from 0, like the script of a prototype) to the number of script instances of the map that use it.</summary>
 		public Dictionary<Int32, Int32> Scripts { get; } = [];
 	}
 
@@ -92,7 +92,8 @@ namespace ProtoForge.Core.Formats.Map
 			Dictionary<Int32, Int32> scripts = ReadScripts(reader);
 
 			Int32 total = reader.Int();
-			MapSummary map = new(fileName, name, version, mapScript > 0 ? mapScript : 0, total);
+			// The header counts the script from 1 (0 and -1 mean none), the scripts of the objects count from 0.
+			MapSummary map = new(fileName, name, version, mapScript > 0 ? mapScript - 1 : -1, total);
 			foreach (KeyValuePair<Int32, Int32> script in scripts)
 			{
 				map.Scripts[script.Key] = script.Value;
@@ -154,7 +155,7 @@ namespace ProtoForge.Core.Formats.Map
 						{
 							// After the id and the link come the fields that depend on the type, then the flags and the script number.
 							Int32 number = reader.Peek(8 + extra + 4);
-							if (number > 0)
+							if (number >= 0)
 							{
 								scripts[number] = scripts.GetValueOrDefault(number) + 1;
 							}

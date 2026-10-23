@@ -74,6 +74,7 @@ namespace ProtoForge.UI.Controls
 			("file:", "search.key.file"),
 			("flag:", "search.key.flag"),
 			("source:", "search.key.source"),
+			("script:", "search.key.script"),
 		];
 
 		private const Int32 MaxValues = 10;

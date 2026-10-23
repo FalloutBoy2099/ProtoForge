@@ -8,18 +8,18 @@ namespace ProtoForge.Core.Domain
 	/// <summary>
 	/// Search and filter criteria for the prototype list. The text query supports plain words (matched against name, description,
 	/// file name and PID) and prefixed terms: <c>pid:1234</c>, <c>file:0012</c>, <c>kind:weapon</c>, <c>flag:Flat</c>,
-	/// <c>text:rifle</c>, <c>source:rpu.dat</c>, <c>art:missing</c>.
+	/// <c>text:rifle</c>, <c>source:rpu.dat</c>, <c>art:missing</c>, <c>script:acbrahmn</c> (a part of the script name, its number in scripts.lst, or <c>none</c>).
 	/// </summary>
 	public sealed class ProtoFilter
 	{
 		private readonly List<Func<ProtoEntry, Boolean>> _predicates = [];
 
-		public ProtoFilter(String? query)
+		public ProtoFilter(String? query, IReadOnlyList<String>? scriptNames = null)
 		{
 			Query = query ?? String.Empty;
 			foreach (String token in Tokenize(Query))
 			{
-				_predicates.Add(CreatePredicate(token));
+				_predicates.Add(CreatePredicate(token, scriptNames ?? []));
 			}
 		}
 
@@ -162,7 +162,7 @@ namespace ProtoForge.Core.Domain
 			return tokens;
 		}
 
-		private static Func<ProtoEntry, Boolean> CreatePredicate(String token)
+		private static Func<ProtoEntry, Boolean> CreatePredicate(String token, IReadOnlyList<String> scriptNames)
 		{
 			Int32 colon = token.IndexOf(':', StringComparison.Ordinal);
 			if (colon > 0)
@@ -188,6 +188,8 @@ namespace ProtoForge.Core.Domain
 						return e => e.SourceName.Contains(value, StringComparison.OrdinalIgnoreCase);
 					case "flag":
 						return e => MatchesFlag(e, value);
+					case "script":
+						return e => MatchesScript(e, value, scriptNames);
 					default:
 						break;
 				}
@@ -197,6 +199,32 @@ namespace ProtoForge.Core.Domain
 				|| e.Description.Contains(token, StringComparison.OrdinalIgnoreCase)
 				|| e.FileName.Contains(token, StringComparison.OrdinalIgnoreCase)
 				|| MatchesPid(e, token);
+		}
+
+		private static Boolean MatchesScript(ProtoEntry entry, String value, IReadOnlyList<String> scriptNames)
+		{
+			Int32 index = entry.ScriptIndex;
+			if (value.Length == 0)
+			{
+				return index >= 0;
+			}
+
+			if (value.Equals("none", StringComparison.OrdinalIgnoreCase))
+			{
+				return entry.File is not null && index < 0;
+			}
+
+			if (index < 0)
+			{
+				return false;
+			}
+
+			if (Int32.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out Int32 line))
+			{
+				return index == line;
+			}
+
+			return index < scriptNames.Count && scriptNames[index].Contains(value, StringComparison.OrdinalIgnoreCase);
 		}
 
 		private static Boolean MatchesPid(ProtoEntry entry, String value)

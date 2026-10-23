@@ -166,7 +166,7 @@ namespace ProtoForge.Core.Tests
 		{
 			List<ProtoEntry> entries = [];
 			ProtoEntry item = Add(entries, ProtoKind.MiscItem, 1);
-			item.File!.TrySet(FieldKeys.ScriptId, 0x03000001);
+			item.File!.TrySet(FieldKeys.ScriptId, 0x03000000);
 			Directory.CreateDirectory(Path.Combine(_scripts, "scripts"));
 			using LayeredFileSystem files = new([new DirectoryLayer(new LayerInfo(0, "data", _scripts, false, false), _scripts)]);
 			IReadOnlyList<String> names = ["there.int"];

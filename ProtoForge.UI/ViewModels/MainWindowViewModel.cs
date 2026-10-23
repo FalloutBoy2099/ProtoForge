@@ -137,6 +137,16 @@ namespace ProtoForge.UI.ViewModels
 					.Select(g => (g.Key, g.Count().ToString("N0", System.Globalization.CultureInfo.CurrentCulture)))];
 			}
 
+			if (key == "script" && _workspaceService.Current is { } game)
+			{
+				// The scripts that prototypes use, the most used first, with how many prototypes use each and what scripts.lst says about it.
+				return [.. game.Catalog.All
+					.Where(e => e.ScriptIndex >= 0 && e.ScriptIndex < game.ScriptNames.Count)
+					.GroupBy(e => e.ScriptIndex)
+					.OrderByDescending(g => g.Count())
+					.Select(g => (System.IO.Path.GetFileNameWithoutExtension(game.ScriptNames[g.Key]), g.Count().ToString("N0", System.Globalization.CultureInfo.CurrentCulture) + " · " + game.GetScriptDescription(g.Key)))];
+			}
+
 			return [];
 		}
 

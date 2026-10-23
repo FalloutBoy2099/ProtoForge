@@ -12,6 +12,7 @@ namespace ProtoForge.Infrastructure.Workspace
 	using ProtoForge.Core.Editing;
 	using ProtoForge.Core.Formats.Ai;
 	using ProtoForge.Core.Formats.Frm;
+	using ProtoForge.Core.Formats.Lst;
 	using ProtoForge.Core.Formats.Msg;
 	using ProtoForge.Core.Formats.Pro;
 	using ProtoForge.Core.Reference;
@@ -112,6 +113,41 @@ namespace ProtoForge.Infrastructure.Workspace
 
 		public IReadOnlyList<String> ScriptNames { get; }
 
+		private IReadOnlyList<String>? _scriptDescriptions;
+
+		/// <summary>The comment <c>scripts.lst</c> has for each script (what the script is for), in the order of <see cref="ScriptNames"/>.</summary>
+		public IReadOnlyList<String> ScriptDescriptions
+		{
+			get { return _scriptDescriptions ??= ReadScriptDescriptions(); }
+		}
+
+		/// <summary>The description of a script, given its number in <c>scripts.lst</c> (counted from 0), or an empty text.</summary>
+		public String GetScriptDescription(Int32 index)
+		{
+			return index >= 0 && index < ScriptDescriptions.Count ? ScriptDescriptions[index] : String.Empty;
+		}
+
+		private IReadOnlyList<String> ReadScriptDescriptions()
+		{
+			Byte[]? bytes = Files.ReadAllBytes("scripts/scripts.lst");
+			if (bytes is null)
+			{
+				return [];
+			}
+
+			// A line reads <c>name.int ; description # local_vars=N</c>.
+			List<String> result = [];
+			foreach (String line in LstFile.Parse(bytes).Lines)
+			{
+				Int32 start = line.IndexOf(';', StringComparison.Ordinal);
+				Int32 end = line.IndexOf('#', StringComparison.Ordinal);
+				String text = start < 0 ? String.Empty : end > start ? line[(start + 1)..end] : line[(start + 1)..];
+				result.Add(text.Trim());
+			}
+
+			return result;
+		}
+
 		private readonly CancellationTokenSource _lifetime = new();
 		private Task<ReferenceIndex>? _referenceIndex;
 
@@ -119,6 +155,12 @@ namespace ProtoForge.Infrastructure.Workspace
 		/// What the maps and the scripts of the game say about the prototypes (where they are placed, which scripts name them). Built on the first
 		/// call, in the background, from the kinds the prototypes have now; every later call gets the same result.
 		/// </summary>
+		/// <summary>Forgets what was read from the maps and the scripts: the next <see cref="GetReferenceIndexAsync"/> reads them again (they may have changed on the disk).</summary>
+		public void InvalidateReferenceIndex()
+		{
+			_referenceIndex = null;
+		}
+
 		public Task<ReferenceIndex> GetReferenceIndexAsync()
 		{
 			if (_referenceIndex is null)

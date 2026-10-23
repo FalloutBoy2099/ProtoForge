@@ -221,6 +221,25 @@ namespace ProtoForge.Core.Tests.Domain
 		}
 
 		[Fact]
+		public void Filter_ScriptTerm_MatchesTheNameTheNumberOrNone()
+		{
+			Fixture f = new();
+			List<ProtoEntry> all = [.. f.Catalog.All];
+			IReadOnlyList<String> scripts = ["first.int", "ACBrahmn.int"];
+			f[1].File!.TrySet(FieldKeys.ScriptId, 0x03000001);
+			f[2].File!.TrySet(FieldKeys.ScriptId, 0x03000000);
+			f[3].File!.TrySet(FieldKeys.ScriptId, -1);
+
+			// The numbers of scripts.lst count from 0: 1 is the second line.
+			Assert.Equal(1, f[1].ScriptIndex);
+			Assert.Equal(-1, f[3].ScriptIndex);
+			Assert.Equal([f[1]], all.Where(new ProtoFilter("script:brahm", scripts).Matches));
+			Assert.Equal([f[2]], all.Where(new ProtoFilter("script:0", scripts).Matches));
+			Assert.Equal([f[3]], all.Where(new ProtoFilter("script:none", scripts).Matches));
+			Assert.Equal(2, all.Count(new ProtoFilter("script:", scripts).Matches));
+		}
+
+		[Fact]
 		public void Diff_ReportsOnlyTheChangedFields()
 		{
 			Fixture f = new();
